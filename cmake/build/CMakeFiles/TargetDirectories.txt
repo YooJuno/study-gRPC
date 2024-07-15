@@ -1,0 +1,5 @@
+/home/juno/grpc/examples/cpp/jpeg/cmake/build/CMakeFiles/rebuild_cache.dir
+/home/juno/grpc/examples/cpp/jpeg/cmake/build/CMakeFiles/edit_cache.dir
+/home/juno/grpc/examples/cpp/jpeg/cmake/build/CMakeFiles/jpeg_client.dir
+/home/juno/grpc/examples/cpp/jpeg/cmake/build/CMakeFiles/jpeg_server.dir
+/home/juno/grpc/examples/cpp/jpeg/cmake/build/CMakeFiles/jp_grpc_proto.dir

@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+0e8b4cd8e0d53591453f9a66cb90cecf jpeg.pb.cc

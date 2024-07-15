@@ -1,0 +1,2 @@
+/usr/bin/ar qc libjp_grpc_proto.a  CMakeFiles/jp_grpc_proto.dir/jpeg.grpc.pb.cc.o CMakeFiles/jp_grpc_proto.dir/jpeg.pb.cc.o
+/usr/bin/ranlib libjp_grpc_proto.a
