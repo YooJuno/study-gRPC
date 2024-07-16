@@ -28,15 +28,13 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 
-
-//juno
 #include <fstream> 
 #include <sys/stat.h>
 #include <ctime>
 #include <dirent.h>
-#define FILE (1)
-#define DIRECTORY (2)
 
+#define FILE (1)
+#define Dir (2)
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -49,11 +47,12 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using jpeg::Greeter;
+using jpeg::Patcher;
 using jpeg::ImgRequest;
 using jpeg::ImgReply;
-using jpeg::DirectoryContentsReply;
-using jpeg::DirectoryContentsRequest;
+using jpeg::DirContents;
+using jpeg::LoginInfo;
+using jpeg::LoginResult;
 
 using namespace std;
 
@@ -61,10 +60,9 @@ ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
 // Logic and data behind the server's behavior.
 // proto 파일에서 정의한 서비스 부분임.
-class GreeterServiceImpl final : public Greeter::Service {
-    
-
-    bool isDirectory(const string& path)
+class PatcherServer final : public Patcher::Service 
+{
+    bool isDir(const string& path)
     {
         struct stat dirStat;
 
@@ -89,7 +87,7 @@ class GreeterServiceImpl final : public Greeter::Service {
         return S_ISREG(fileStat.st_mode);
     }
 
-    vector<string> getDirectoryContents(const string& dirPath, int option = 0)
+    vector<string> getDirectoryInfo(const string& dirPath, int option = 0)
     {
         vector<string> list;
         DIR* dir = opendir(dirPath.c_str());
@@ -104,87 +102,67 @@ class GreeterServiceImpl final : public Greeter::Service {
                 // 현재 폴더와 상위 폴더는 무시
                 if (name == "." || name == "..") continue;
                 
-                if (option == FILE && isDirectory(dirPath + "/" + name)) continue;
-                if (option == DIRECTORY && isFile(dirPath + "/" + name)) continue;
+                if (option == FILE && isDir(dirPath + "/" + name)) continue;
+                if (option == Dir && isFile(dirPath + "/" + name)) continue;
 
                 list.push_back(name);
             }
 
             closedir(dir);
         }
-        else
-            cerr << "폴더 열기 실패" << endl;
+        else cerr << "폴더 열기 실패" << endl;
 
         return list;
     }
 
-    
+    // Status Login(ServerContext* context, const LoginInfo* request, LoginResult* reply)
+    // override
+    // {
+    //     user_id_ = request->id();
+    //     user_pw_ = request->pw();
+    //     cout << "user ID : " << user_id_ << endl;
+    //     cout << "user PW : " << user_pw_ << endl;
 
-    Status SendDirectoryContents(ServerContext* context, 
-                    const   DirectoryContentsRequest* request, 
-                            DirectoryContentsReply* reply) 
-    override {
-        id_ = request->id();
-        pw_ = request->pw();
-        cout << "user ID : " << id_ << endl;
-        cout << "user PW : " << pw_ << endl;
+    //     reply->set_result("Success!");
 
-        string dataset_path("../../dataset/"); // 현재 경로를 받아와서 경로 탐색이 더 좋을지도
+    //     return Status::OK;
+    // }
+
+    Status PrintDirInfo(ServerContext* context, 
+                    const   DirContents* request, 
+                            DirContents* reply) 
+    override 
+    {
+        string dataset_path("../../dataset/"); // 현재 경로를 받아와서 경로 탐색이 더 좋을지도...
         
-        // vector<string> allList = getDirectoryContents(dataset_path);
-        vector<string> list;
-        DIR* dir = opendir(dataset_path.c_str());
-        int cnt = 0;
-        if (dir)
-        {
-            struct dirent* entry;
-            while ((entry = readdir(dir)))
-            {
-                string name = entry->d_name;
+        vector<string> dir_entries = getDirectoryInfo(dataset_path, 0); // 0-ALL , 1-FILE , 2-DIR
 
-                // 현재 폴더와 상위 폴더는 무시
-                if (name == "." || name == "..") continue;
-                
-                if (0 == FILE && isDirectory(dataset_path + "/" + name)) continue;
-                if (0 == DIRECTORY && isFile(dataset_path + "/" + name)) continue;
-
-                reply->add_directory(name);
-                cnt++;
-            }
-
-            closedir(dir);
+        for(auto i=0 ; i<dir_entries.size() ; i++){
+            reply->add_entries(dir_entries[i]);
         }
-        else
-            cerr << "폴더 열기 실패" << endl;
-
-        // vector<string> fileList = getDirectoryContents(dataset_path, FILE);
-        // vector<string> dirList = getDirectoryContents(dataset_path, DIRECTORY);
-        
-        reply->set_count(cnt);
+        reply->set_count(dir_entries.size());
         
         return Status::OK;
     }
 
-
-    Status SendImg(ServerContext* context, 
-                    const ImgRequest* request, 
+    Status DownloadImg(ServerContext* context, const ImgRequest* request, 
                     ImgReply* reply) 
-    override {
+    override 
+    {
+        cout << "user [" << user_id_ << "] requested " + request->name() << endl;
 
-        cout << '[' << id_ << "] requested " + request->name() << endl;
-
-        ifstream img_in;
+        ifstream ifs;
         string img_folder_path("../../dataset/");
         string img_name(request->name());
         string img_path = img_folder_path+img_name;
         
         // 이미지의 크기를 byte 단위로 구하기
-        img_in.open(img_path, ios::binary);
-        string buffer_string((istreambuf_iterator<char>(img_in)), istreambuf_iterator<char>());
+        ifs.open(img_path, ios::binary);
+        string buffer_string((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
 
         reply->set_size(buffer_string.length());
         reply->set_img(buffer_string);
-        reply->set_name(request->name());
+        reply->set_name("download_"+request->name());
         
         string file_creation_time;
         struct stat attr;
@@ -194,15 +172,16 @@ class GreeterServiceImpl final : public Greeter::Service {
 
         reply->set_date(file_creation_time); 
         
-        return Status::OK;
+        return Status::OK; // 보냈다? 이 부분 더 파볼 것.
     }
-    private:
-    string id_;
-    string pw_;
-    
+
+private:
+    string user_id_;
+    string user_pw_;
 };
 
-void RunServer(uint16_t port) {
+void RunServer(uint16_t port) 
+{
     string server_address = absl::StrFormat("0.0.0.0:%d", port);
 
     grpc::EnableDefaultHealthCheckService(true);
@@ -214,7 +193,7 @@ void RunServer(uint16_t port) {
 
     // Register "service" as the instance through which we'll communicate with
     // clients. In this case it corresponds to an *synchronous* service.
-    GreeterServiceImpl service;
+    PatcherServer service;
     builder.RegisterService(&service);
 
     // Finally assemble the server.
@@ -226,8 +205,10 @@ void RunServer(uint16_t port) {
     server->Wait();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) 
+{
     absl::ParseCommandLine(argc, argv);
     RunServer(absl::GetFlag(FLAGS_port));
+
     return 0;
 }

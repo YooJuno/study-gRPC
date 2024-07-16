@@ -21,28 +21,43 @@ option objc_class_prefix = "JP";
 
 package jpeg;
 
-// The greeting service definition.
-service Greeter {
-  rpc SendImg (ImgRequest) returns (ImgReply) {}
-  rpc SendDirectoryContents (DirectoryContentsRequest) returns (DirectoryContentsReply) {}
+// The patch service definition.
+service Patcher 
+{
+    rpc DownloadImg (ImgRequest) returns (ImgReply) {}
+    rpc Login (LoginInfo) returns (LoginResult) {}
+    // rpc PrintDirInfo (DirContents) returns (DirContents) {} // print라는 표현이 맞을까? 엄밀히 말하면 다운로드인데
 }
 
-message ImgRequest {
-  string name = 1;
+message ImgRequest 
+{
+    string name = 1;
 }
 
-message ImgReply {
-  int32 size = 1;  
-  bytes img = 2;
-  string name = 3;
-  string date = 4;
+message ImgReply 
+{
+    int32 size = 1;  
+    bytes img = 2;
+    string name = 3;
+    string date = 4;
 }
 
-message DirectoryContentsRequest{
-  string id = 1;
-  string pw = 2;
+message LoginInfo
+{
+    string id = 1;
+    string pw = 2;
 }
-message DirectoryContentsReply{
-  repeated string directory = 1; // 배열. 디렉토리 안에 있는 
-  int32 count = 2;
+message LoginResult
+{
+    string result = 1;
+    repeated string entries = 2; // 배열. 디렉토리 안에 있는 
+    int32 count = 3;
 }
+
+
+// message DirContents
+// {
+//     repeated string entries = 1; // 배열. 디렉토리 안에 있는 
+//     int32 count = 2;
+// }
+

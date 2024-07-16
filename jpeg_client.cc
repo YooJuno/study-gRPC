@@ -20,7 +20,6 @@
 #include <memory>
 #include <string>
 
-//juno
 #include <fstream> 
 #include <vector>
 
@@ -35,127 +34,132 @@
 #include "jpeg.grpc.pb.h"
 #endif
 
-
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
-using jpeg::Greeter;
+using jpeg::Patcher;
 
 using jpeg::ImgRequest;
 using jpeg::ImgReply;
-using jpeg::DirectoryContentsRequest;
-using jpeg::DirectoryContentsReply;
+
+using jpeg::LoginInfo;
+using jpeg::LoginResult;
+
+using jpeg::DirContents;
 
 using namespace std;
 ABSL_FLAG(string, target, "localhost:50051", "Server address");
 
-class GreeterClient {
-    public:
-    GreeterClient(shared_ptr<Channel> channel)
-        : stub_(Greeter::NewStub(channel)) {}
+class PatcherClient 
+{
+private:
+    unique_ptr<Patcher::Stub> stub_;
 
-    // Assembles the client's payload, sends it and presents the response back
-    // from the server.
-    void ImgFile(const string& file_name) {
-            
-        // Data we are sending to the server.
-        ImgRequest request;
-        // Container for the data we expect from the server.
-        ImgReply reply;
+public:
+    PatcherClient(shared_ptr<Channel> channel)
+        : stub_(Patcher::NewStub(channel)) {}
+
+    // string DirInfo()
+    // {   
+    //     DirContents reply; // request가 필요 없을 때는 어떻게 해야되지?
+    //     ClientContext context;
+
+    //     Status status = stub_->PrintDirInfo(&context, reply, &reply);
+
+    //     vector<string> Dir_info;
+    //     if (status.ok()) 
+    //     {
+    //         cout << "\n[아래의 목록 중에 선택해주세요]\n";
+    //         for(int i=0 ; i<reply.count() ; i++)
+    //         {
+    //             cout << i+1 << ". " << reply.entries(i) << endl;
+    //             Dir_info.push_back(reply.entries(i));
+    //         }
+    //     } 
+    //     else 
+    //     {
+    //         cout << status.error_code() << ": " << status.error_message() << endl;
+    //         exit(-1);
+    //     }
+
+    //     cout << "\n번호를 입력하세요 : " ;
+    //     int num;
+    //     cin>>num;
+    //     cout << "\n";
+
+    //     return Dir_info[num-1];
+    // }
+
+    vector<string> LoginToServ(const string& id, const string& pw)
+    {
+        vector<string> output;
+        LoginInfo request;
+        LoginResult reply;
+
+        request.set_id(id);
+        request.set_pw(pw);
+
+        ClientContext context;
+
+        Status status = stub_->Login(&context, request, &reply);
+
+
+        
+        if (status.ok()) 
+        {
+            if(reply.result() == "Success")
+            {
+
+            }
+            return ;
+        } 
+        else 
+        {   
+            output.push_back(status.error_code() + ": " + status.error_message());
+            return output;
+        }
+    }
+    
+    void DownloadFile(const string& file_name) 
+    {
+        ImgRequest request; // Data we are sending to the server.
+        ImgReply reply; // Container for the data we expect from the server.
         
         request.set_name(file_name);
 
-        // Context for the client. It could be used to convey extra information to
-        // the server and/or tweak certain RPC behaviors.
         ClientContext context;
 
-        // The actual RPC.
-        Status status = stub_->SendImg(&context, request, &reply); //SEND
+        // The actual RPC. Send data
+        Status status = stub_->DownloadImg(&context, request, &reply); 
 
         // Act upon its status.
-        if (status.ok()) {
+        if (status.ok()) 
+        {
             string file_name  (reply.name()); 
             int         file_size = reply.size(); 
             string file_img  = reply.img(); 
             string file_date  (reply.date()); 
             
             cout<<"file name : "+file_name<<endl;
-            cout<<"size : "<<file_size<<"Bytes"<<endl;
+            cout<<"size : "<<file_size<<" Bytes"<<endl;
             cout<<"date : "+file_date<<endl;
             
-            ofstream img_out;
-            img_out.open("../../dataset/download_" + file_name, ios::out | ios::binary);
-
-            // [성공]
-            // img_out << file_img;
-            
-            // [실패]
-            // img_out.write((char *)&file_img, file_size);
-
-            // [성공]
-            for(int i=0 ; i<file_size ; i++){
-                img_out << (char)file_img[i];
-            }
-            img_out.close();
+            ofstream ofs;
+            ofs.open("../../dataset/" + file_name, ios::out | ios::binary);
+            ofs.write((char *)file_img.data(), file_img.length());           
+            ofs.close();
         } 
-        else {
+        else 
             cout << status.error_code() << ": " << status.error_message() << endl;
-        }
     }
-
-    string DirectoryInfo(const string& id, const string& pw)
-    {
-        DirectoryContentsRequest request_d;
-        DirectoryContentsReply reply_d;
-        
-        request_d.set_id(id);
-        request_d.set_pw(pw);
-
-        ClientContext context;
-
-        Status status = stub_->SendDirectoryContents(&context, request_d, &reply_d); //SEND
-        vector<string> directory_info;
-        if (status.ok()) {
-            
-            cout << "\n[아래의 목록 중에 선택해주세요]\n";
-            for(int i=0 ; i<reply_d.count() ; i++){
-                cout << i+1 << ". " << reply_d.directory(i) << endl;
-                directory_info.push_back(reply_d.directory(i));
-            }
-
-            
-        } 
-        else {
-            cout << status.error_code() << ": " << status.error_message() << endl;
-            exit(-1);
-        }
-        cout << "\n";
-
-        cout << "번호를 입력하세요 : " ;
-        int num;
-        cin>>num;
-        cout << "\n";
-        return directory_info[num-1];
-    }
-
-    private:
-    unique_ptr<Greeter::Stub> stub_;
-    string id_;
-    string pw_;
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) 
+{
     absl::ParseCommandLine(argc, argv);
-    // Instantiate the client. It requires a channel, out of which the actual RPCs
-    // are created. This channel models a connection to an endpoint specified by
-    // the argument "--target=" which is the only expected argument.
-    string target_str = absl::GetFlag(FLAGS_target);
 
-    // We indicate that the channel isn't authenticated (use of
-    // InsecureChannelCredentials()).
-    GreeterClient greeter(
-        grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+    string target_str = absl::GetFlag(FLAGS_target);
     
     string ID;
     string PW;
@@ -164,11 +168,23 @@ int main(int argc, char** argv) {
     cout << "PW : ";
     cin >> PW;
 
-    string reply_directory = greeter.DirectoryInfo(ID, PW);
-
+    PatcherClient patcher(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
     
-    greeter.ImgFile(reply_directory);
+    vector<string> FileEntriesInServ = patcher.LoginToServ(ID,PW);
+
+    // string replyDirectory = patcher.DirInfo();
+
+    patcher.DownloadFile("temp");
 
     return 0;
 }
 
+
+// RemoteFilePatcher pather();
+// auto dirEntries = patcher.GetDirEntiries(".");
+// auto file = dirEntries[0].IsFile ? dirEntries[0].Path : "";
+// auto fileContent = patcher.GetFile(file);
+// ofstreawm ofs(path);
+// ofs.write(fileContent);
+
+// referential integrity of
