@@ -23,37 +23,26 @@ package jpeg;
 
 // The greeting service definition.
 service Greeter {
-  // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
-
-  // rpc SayHelloStreamReply (HelloRequest) returns (stream HelloReply) {}
-
-  // rpc SayHelloBidiStream (stream HelloRequest) returns (stream HelloReply) {}
-
   rpc SendImg (ImgRequest) returns (ImgReply) {}
-}
-
-// The request message containing the user's name.
-message HelloRequest {
-  string name = 1;
-}
-
-// The response message containing the greetings
-message HelloReply {
-    string message = 1;
+  rpc SendDirectoryContents (DirectoryContentsRequest) returns (DirectoryContentsReply) {}
 }
 
 message ImgRequest {
-    bytes img = 1;
-    string name = 2;
-    string date = 3;
-    int32 size = 4;
-    
+  string name = 1;
 }
 
 message ImgReply {
-    bytes img = 1;
-    string name = 2;
-    string date = 3;
+  int32 size = 1;  
+  bytes img = 2;
+  string name = 3;
+  string date = 4;
 }
 
+message DirectoryContentsRequest{
+  string id = 1;
+  string pw = 2;
+}
+message DirectoryContentsReply{
+  repeated string directory = 1; // 배열. 디렉토리 안에 있는 
+  int32 count = 2;
+}
