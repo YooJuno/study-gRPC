@@ -56,10 +56,11 @@ using jpeg::ReplyFile;
 using jpeg::LoginInfo;
 using jpeg::LoginResult;
 
-using jpeg::Permission;
-using jpeg::ReplyJobList;
+using jpeg::ReplyJobEntries;
 
-using jpeg::DirContents;
+using jpeg::DirEntries;
+
+using jpeg::Empty;
 
 using namespace std;
 
@@ -78,30 +79,36 @@ class PatcherServer final : public Patcher::Service
             cout << path << " 경로 정보 알 수 없음" << endl;
             return false;
         }
-
-        return S_ISDIR(dirStat.st_mode);
+        else
+        {
+            return S_ISDIR(dirStat.st_mode);
+        }
     }
 
     bool isFile(const string& path)
     {
         struct stat fileStat;
+
         if (stat(path.c_str(), &fileStat) != 0)
         {
             cout << path << " 경로 정보 알 수 없음" << endl;
             return false;
         }
-
-        return S_ISREG(fileStat.st_mode);
+        else
+        {
+            return S_ISREG(fileStat.st_mode);
+        }
     }
 
     vector<string> getDirectoryInfo(const string& dirPath, int option = 0)
     {
-        vector<string> list;
+        vector<string> output;
         DIR* dir = opendir(dirPath.c_str());
 
         if (dir)
         {
             struct dirent* entry;
+
             while ((entry = readdir(dir)))
             {
                 string name = entry->d_name;
@@ -111,92 +118,91 @@ class PatcherServer final : public Patcher::Service
                 if (option == FILE && isDir(dirPath + "/" + name)) continue;
                 if (option == Dir && isFile(dirPath + "/" + name)) continue;
 
-                list.push_back(name);
+                output.push_back(name);
             }
 
             closedir(dir);
         }
-        else cerr << "폴더 열기 실패" << endl;
+        else{
+            cerr << "폴더 열기 실패" << endl;
+        }
 
-        return list;
+        return output;
     }
 
-    Status PrintDirInfo(ServerContext* context, 
-                    const   Permission* request, 
-                            DirContents* reply) 
+    Status PatchDirInfo(ServerContext* context, const Empty* request, DirEntries* reply) 
     override 
     {
-        string dataset_path("../../dataset/"); // 현재 경로를 받아와서 경로 탐색이 더 좋을지도...
+        string datasetPath("../../dataset/"); // 현재 경로를 받아와서 경로 탐색이 더 좋을지도...
         
-        vector<string> dir_list = getDirectoryInfo(dataset_path, 0); // 0-ALL , 1-FILE , 2-DIR
+        vector<string> dirEtries = getDirectoryInfo(datasetPath, 0); // 0-ALL , 1-FILE , 2-DIR
 
-        for(auto i=0 ; i<dir_list.size() ; i++)
-            reply->add_list(dir_list[i]);
+        for(auto i=0 ; i<dirEtries.size() ; i++)
+            reply->add_entries(dirEtries[i]);
         
-        reply->set_v_size(dir_list.size());
+        reply->set_v_size(dirEtries.size());
 
         return Status::OK;
     }
 
-    Status Login(ServerContext* context, const LoginInfo* request, LoginResult* reply)
+    Status Login(ServerContext* context, const LoginInfo* request, LoginResult* reply) 
     override
     {
-        user_id_ = request->id(); cout << "user ID : " << user_id_ << endl;
-        user_pw_ = request->pw(); cout << "user PW : " << user_pw_ << endl;
+        _userID = request->id(); cout << "user ID : " << _userID << endl;
+        _userPW = request->pw(); cout << "user PW : " << _userPW << endl;
 
-        if(user_id_ == "juno" && user_pw_ == "980220")
-            reply->set_result("Login Success");
+        if(_userID == "juno" && _userPW == "980220")
+            reply->set_result(true);
         else
-            reply->set_result("Login Fail");
+            reply->set_result(false);
 
         return Status::OK;
     }
 
-    Status PatchJobList (ServerContext* context, const Permission* request, ReplyJobList* reply)
+    Status PatchJobEntries (ServerContext* context, const Empty* request, ReplyJobEntries* reply) 
     override
     {
-        vector<string> job_list = {"Upload" , "Download"};
+        vector<string> jobList = {"Upload" , "Download"};
 
-        for(int i=0 ; i<job_list.size() ; i++)
-            reply->add_list(job_list[i]);
+        for(int i=0 ; i<jobList.size() ; i++)
+            reply->add_entries(jobList[i]);
         
-        reply->set_v_size(job_list.size());
+        reply->set_v_size(jobList.size());
 
         return Status::OK;
     }
 
-    Status PatchFile(ServerContext* context, const RequestFile* request, 
-                    ReplyFile* reply) 
+    Status PatchFile(ServerContext* context, const RequestFile* request, ReplyFile* reply) 
     override 
     {
-        cout << "user [" << user_id_ << "] requested " + request->name() << endl;
+        cout << "user [" << _userID << "] requested " + request->name() << endl;
 
         ifstream ifs;
-        string img_folder_path("../../dataset/");
-        string img_name(request->name());
-        string img_path = img_folder_path + img_name;
+        string imgFolderPath("../../dataset/");
+        string imgName(request->name());
+        string imgPath = imgFolderPath + imgName;
         
-        ifs.open(img_path, ios::binary);
-        string img_buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
+        ifs.open(imgPath, ios::binary);
+        string imgBuffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
 
-        reply->set_img(img_buffer);
-        reply->set_name(img_name);
-        reply->set_size(img_buffer.length());
+        reply->set_img(imgBuffer);
+        reply->set_name(imgName);
+        reply->set_size(imgBuffer.length());
         
-        string file_creation_time;
+        string fileCreationTime;
         struct stat attr;
 
-        if (stat(img_path.c_str(), &attr) == 0) 
-            file_creation_time = ctime(&attr.st_ctime);
+        if (stat(imgPath.c_str(), &attr) == 0) 
+            fileCreationTime = ctime(&attr.st_ctime);
 
-        reply->set_date(file_creation_time); 
+        reply->set_date(fileCreationTime); 
         
         return Status::OK; // 보냈다? 이 부분 더 파볼 것.
     }
 
 private:
-    string user_id_;
-    string user_pw_;
+    string _userID;
+    string _userPW;
 };
 
 void RunServer(uint16_t port) 

@@ -182,6 +182,7 @@ CMakeFiles/jpeg_server.dir/jpeg_server.cc.o
  /include/google/protobuf/extension_set.h
  /include/google/protobuf/generated_enum_reflection.h
  /include/google/protobuf/generated_enum_util.h
+ /include/google/protobuf/generated_message_bases.h
  /include/google/protobuf/generated_message_reflection.h
  /include/google/protobuf/generated_message_tctable_decl.h
  /include/google/protobuf/generated_message_util.h
@@ -191,6 +192,7 @@ CMakeFiles/jpeg_server.dir/jpeg_server.cc.o
  /include/google/protobuf/internal_visibility.h
  /include/google/protobuf/io/coded_stream.h
  /include/google/protobuf/io/zero_copy_stream.h
+ /include/google/protobuf/io/zero_copy_stream_impl.h
  /include/google/protobuf/io/zero_copy_stream_impl_lite.h
  /include/google/protobuf/json/json.h
  /include/google/protobuf/map.h

@@ -26,9 +26,11 @@ service Patcher
 {
     rpc PatchFile (RequestFile) returns (ReplyFile) {}
     rpc Login (LoginInfo) returns (LoginResult) {}
-    rpc PatchJobList (Permission) returns (ReplyJobList) {}
-    rpc PrintDirInfo (Permission) returns (DirContents) {} // print라는 표현이 맞을까? 엄밀히 말하면 다운로드인데
+    rpc PatchJobEntries (Empty) returns (ReplyJobEntries) {}
+    rpc PatchDirInfo (Empty) returns (DirEntries) {}
 }
+
+message Empty {}
 
 message RequestFile
 {
@@ -51,23 +53,18 @@ message LoginInfo
 
 message LoginResult
 {
-    string result = 1;
+    bool result = 1;
 }
 
-message Permission
+message ReplyJobEntries
 {
-    bool permission = 1;
-}
-
-message ReplyJobList
-{
-    repeated string list = 1;
+    repeated string entries = 1;
     int32 v_size = 2;
 }
 
-message DirContents
+message DirEntries
 {
-    repeated string list = 1; // 배열. 디렉토리 안에 있는 
+    repeated string entries = 1; // 배열. 디렉토리 안에 있는 
     int32 v_size = 2;
 }
 

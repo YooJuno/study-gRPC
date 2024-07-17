@@ -181,6 +181,7 @@ CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/explicitly
 CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/extension_set.h
 CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/generated_enum_reflection.h
 CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/generated_enum_util.h
+CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/generated_message_bases.h
 CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/generated_message_reflection.h
 CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/generated_message_tctable_decl.h
 CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/generated_message_util.h
@@ -190,6 +191,7 @@ CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/inlined_st
 CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/internal_visibility.h
 CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/io/coded_stream.h
 CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/io/zero_copy_stream.h
+CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/io/zero_copy_stream_impl.h
 CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/io/zero_copy_stream_impl_lite.h
 CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/json/json.h
 CMakeFiles/jpeg_server.dir/jpeg_server.cc.o: /include/google/protobuf/map.h

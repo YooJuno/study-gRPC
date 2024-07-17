@@ -168,6 +168,7 @@ CMakeFiles/jp_grpc_proto.dir/jpeg.grpc.pb.cc.o
  /include/google/protobuf/extension_set.h
  /include/google/protobuf/generated_enum_reflection.h
  /include/google/protobuf/generated_enum_util.h
+ /include/google/protobuf/generated_message_bases.h
  /include/google/protobuf/generated_message_reflection.h
  /include/google/protobuf/generated_message_tctable_decl.h
  /include/google/protobuf/generated_message_util.h
@@ -177,6 +178,7 @@ CMakeFiles/jp_grpc_proto.dir/jpeg.grpc.pb.cc.o
  /include/google/protobuf/internal_visibility.h
  /include/google/protobuf/io/coded_stream.h
  /include/google/protobuf/io/zero_copy_stream.h
+ /include/google/protobuf/io/zero_copy_stream_impl.h
  /include/google/protobuf/io/zero_copy_stream_impl_lite.h
  /include/google/protobuf/json/json.h
  /include/google/protobuf/map.h
@@ -450,6 +452,7 @@ CMakeFiles/jp_grpc_proto.dir/jpeg.pb.cc.o
  /include/google/protobuf/extension_set.h
  /include/google/protobuf/generated_enum_reflection.h
  /include/google/protobuf/generated_enum_util.h
+ /include/google/protobuf/generated_message_bases.h
  /include/google/protobuf/generated_message_reflection.h
  /include/google/protobuf/generated_message_tctable_decl.h
  /include/google/protobuf/generated_message_tctable_impl.h
@@ -460,6 +463,7 @@ CMakeFiles/jp_grpc_proto.dir/jpeg.pb.cc.o
  /include/google/protobuf/internal_visibility.h
  /include/google/protobuf/io/coded_stream.h
  /include/google/protobuf/io/zero_copy_stream.h
+ /include/google/protobuf/io/zero_copy_stream_impl.h
  /include/google/protobuf/io/zero_copy_stream_impl_lite.h
  /include/google/protobuf/map.h
  /include/google/protobuf/map_type_handler.h

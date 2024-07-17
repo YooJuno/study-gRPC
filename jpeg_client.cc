@@ -46,10 +46,11 @@ using jpeg::ReplyFile;
 using jpeg::LoginInfo;
 using jpeg::LoginResult;
 
-using jpeg::Permission;
-using jpeg::ReplyJobList;
+using jpeg::ReplyJobEntries;
 
-using jpeg::DirContents;
+using jpeg::DirEntries;
+
+using jpeg::Empty;
 
 using namespace std;
 
@@ -58,96 +59,57 @@ ABSL_FLAG(string, target, "localhost:50051", "Server address");
 class PatcherClient 
 {
 private:
-    unique_ptr<Patcher::Stub> stub_;
+    unique_ptr<Patcher::Stub> _stub;
 
 public:
     PatcherClient(shared_ptr<Channel> channel)
-        : stub_(Patcher::NewStub(channel)) {}
+        : _stub (Patcher::NewStub(channel)) {}
 
-    bool TryLoginToServ()
+    void InputLoginInfoByUser (string& id, string& pw)
     {   
-        // cout << "TryLoginToServ\n" ;
-        vector<string> login_info = InputLoginInfo();
-        
-        string login_result = Login(login_info[0],login_info[1]);
-
-        int try_cnt=0;
-
-        while(login_result == "Login Fail")
-        {
-            if(try_cnt>=3)
-            {
-                cout<<"3회 이상 틀리셨습니다. 이용을 종료합니다\n";
-                return false;
-            }
-
-            login_info = InputLoginInfo();
-            login_result = Login(login_info[0],login_info[1]);
-            cout << login_result << endl;
-            try_cnt++;
-        }
-
-        return true;
-    }
-
-    vector<string> InputLoginInfo()
-    {   
-        string ID;
-        string PW;
         cout << "ID : ";
-        cin >> ID;
+        cin >> id;
         cout << "PW : ";
-        cin >> PW;
-
-        vector<string> output = {ID, PW};
-
-        return output;
+        cin >> pw;
     }
 
-    string Login(const string& id, const string& pw)
+    bool tryLoginToServer(const string& id, const string& pw)
     {
-        // cout << "Login\n" ;
+        ClientContext context;
         LoginInfo request;
         LoginResult reply;
 
         request.set_id(id);
         request.set_pw(pw);
 
-        ClientContext context;
+        Status status = _stub->Login(&context, request, &reply);
 
-        Status status = stub_->Login(&context, request, &reply);
-        
-        string output;
-
-        if (status.ok()) 
-            output = reply.result();
-        else 
-            output = status.error_code() + ": " + status.error_message();
-        
-        cout << "[login_result] " << output << endl;
-
-        return output;
+        if (status.ok())
+        {
+            return reply.result();
+        }
+        else
+        {
+            cout << status.error_code() + ": " + status.error_message() << endl;
+            return false;
+        }
     }
 
-
-    vector<string> PatchJobList(bool permission)
+    vector<string> PatchJobEntries()
     {   
-        // cout << "PatchJobList\n" ;
-        Permission request; // Data we are sending to the server.
-        ReplyJobList reply; // Container for the data we expect from the server.
+        Empty request; // Data we are sending to the server.
+        ReplyJobEntries reply; // Container for the data we expect from the server.
         ClientContext context;
 
-        request.set_permission(permission); // 함수 인자로 받아서 넣어야됨
-
-        Status status = stub_->PatchJobList(&context, request, &reply); 
+        Status status = _stub->PatchJobEntries(&context, request, &reply); 
 
         vector<string> output;
 
         if (status.ok()) 
         {
-            for(int i=0 ; i<reply.v_size() ; i++)
+            for (int i=0; i<reply.v_size(); i++)
             { 
-                output.push_back(reply.list(i));
+                output.push_back(reply.entries(i));
             }
         }
         else 
@@ -159,106 +121,142 @@ public:
         return output;
     }
     
-    void PatchFile(const string& file_name) 
+    void Patch(const string& fileName)  
     {
-        // cout << "PatchFile\n" ;
+        ClientContext context;
         RequestFile request; // Data we are sending to the server.
         ReplyFile reply; // Container for the data we expect from the server.
         
-        request.set_name(file_name);
-
-        ClientContext context;
+        request.set_name(fileName);
 
         // The actual RPC. Send data
-        Status status = stub_->PatchFile(&context, request, &reply); 
+        Status status = _stub->PatchFile(&context, request, &reply); 
 
         // Act upon its status.
         if (status.ok()) 
         {
-            string file_name  (reply.name()); 
-            int file_size = reply.size(); 
-            string file_img  = reply.img(); 
-            string file_date  (reply.date()); 
+            string  fileImg =  reply.img(); 
             
-            cout << "file name : "+file_name << endl;
-            cout << "size : " << file_size << " Bytes" << endl;
-            cout << "date : "+file_date << endl;
+            cout << "file name : "+reply.name() << endl;
+            cout << "size : " << reply.size() << " Bytes" << endl;
+            cout << "date : "+reply.date() << endl;
             
             ofstream ofs;
-            ofs.open("../../download/" + file_name, ios::out | ios::binary);
-            ofs.write((char *)file_img.data(), file_img.length());           
+            ofs.open("../../download/" + fileName, ios::out | ios::binary);
+            ofs.write((char *)fileImg.data(), fileImg.length());           
             ofs.close();
         } 
         else 
+        {
             cout << status.error_code() << ": " << status.error_message() << endl;
+        }
     }
     
-    string DirInfo(bool permission)
+    vector<string> patchDatasetEntries()
     {   
-        // cout << "DirInfo\n" ;
-        Permission request;
-        DirContents reply;
+        vector<string> output;
 
         ClientContext context;
+        Empty request;
+        DirEntries reply;
 
-        request.set_permission(permission);
+        Status status = _stub->PatchDirInfo(&context, request, &reply);
 
-        Status status = stub_->PrintDirInfo(&context, request, &reply);
-
-        vector<string> Dir_info;
         if (status.ok())
         {
-            cout << "\n[Choose Image you wanna download]\n";
-            for(int i=0 ; i<reply.v_size() ; i++)
-            {
-                cout << i+1 << ". " << reply.list(i) << endl;
-                Dir_info.push_back(reply.list(i));
-            }
-        } 
+            for(int i=0; i<reply.v_size(); i++)
+                output.push_back(reply.entries(i));
+        }
         else
         {
             cout << status.error_code() << ": " << status.error_message() << endl;
             exit(-1);
         }
 
-        cout << "\n번호를 입력하세요 : " ;
-        int num;
-        cin>>num;
-        cout << "\n";
-
-        return Dir_info[num-1];
+        return output;
     }
 };
 
-int main(int argc, char** argv) 
+string chooseFrom(vector<string> list)
 {
-    absl::ParseCommandLine(argc, argv);
-    string target_str = absl::GetFlag(FLAGS_target);
-    PatcherClient patcher(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-    
-    bool permission = false;
-
-    if(patcher.TryLoginToServ() == false) 
-        return 0;
-    else 
-        permission = true;
-    
-    vector<string> job_list = patcher.PatchJobList(permission);
-
-    cout << "\n[Choose job you wanna do]\n";
-    for(int i=0 ; i<job_list.size() ; i++)
+    for (int i=0; i<list.size(); i++)
     {
-        cout << "[" << i+1 << "] " << job_list[i] << endl;
+        cout << "[" << i+1 << "] " << list[i] << endl;
     }
-    cout << "Input : " ;
+    cout << "Input num: " ;
     int num;
     cin >> num;
+    
+    cout << "\n";
 
-    string file_name = patcher.DirInfo(permission);
-    
-    patcher.PatchFile(file_name);
-    
-    return 0;
+    return list[num-1];
+}
+
+class GrpcServiceClient
+{
+public:
+    int StartService(int argc, char** argv)
+    {
+        absl::ParseCommandLine(argc, argv);
+        string target_str = absl::GetFlag(FLAGS_target);
+        PatcherClient patcher(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+
+        string userID;
+        string userPW;
+        patcher.InputLoginInfoByUser(userID, userPW);
+
+        auto permission = patcher.tryLoginToServer(userID, userPW);
+
+        int errCnt=0;
+        
+        while (!permission)
+        {
+            errCnt++;
+
+            if (errCnt>3)
+            {
+                cout << "3회 이상 시도하였습니다. 이용을 종료합니다\n";
+                return 0;
+            }
+
+            cout << "Incorrect ID or PW. Please retry\n";
+
+            patcher.InputLoginInfoByUser(userID, userPW);
+            permission = patcher.tryLoginToServer(userID, userPW);
+        }
+
+        if (permission)
+        {
+            auto jobList = patcher.PatchJobEntries();
+            cout << "\n[Choose what you wanna do]\n";
+            auto jobName = chooseFrom(jobList);
+
+            if (jobName == "Download")
+            {
+                auto datasetEntries = patcher.patchDatasetEntries();
+                cout << "\n[Choose what you wanna download]\n";
+                auto fileName = chooseFrom(datasetEntries);
+                
+                patcher.Patch(fileName);
+            }
+            else if (jobName == "Upload")
+            {
+                return 0;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        return 0;
+    }
+
+};
+
+int main(int argc, char** argv)  
+{
+    GrpcServiceClient grpcClient;
+    return grpcClient.StartService(argc, argv);
 }
 
 
@@ -270,3 +268,14 @@ int main(int argc, char** argv)
 // ofs.write(fileContent);
 
 // referential integrity of
+
+// [07/17]
+// class GrpcPictureService
+// {
+// public:
+//     int StartService()
+//     {
+//         return 0;
+//     }
+
+// };
