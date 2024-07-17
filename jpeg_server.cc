@@ -48,7 +48,7 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using jpeg::Patcher;
+using jpeg::Downloader;
 
 using jpeg::RequestFile;
 using jpeg::ReplyFile;
@@ -66,7 +66,7 @@ using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-class PatcherServer final : public Patcher::Service 
+class DownloaderServer final : public Downloader::Service 
 {
 private:
     string _userID;
@@ -96,7 +96,7 @@ public:
         return output;
     }
 
-    Status PatchDirEntries(ServerContext* context, const Empty* request, DirEntries* reply) 
+    Status DownloadDirEntries(ServerContext* context, const Empty* request, DirEntries* reply) 
     override 
     {
         string datasetPath("../../dataset/");
@@ -124,7 +124,7 @@ public:
         return Status::OK;
     }
 
-    Status PatchJobEntries (ServerContext* context, const Empty* request, ReplyJobEntries* reply) 
+    Status DownloadJobEntries (ServerContext* context, const Empty* request, ReplyJobEntries* reply) 
     override
     {
         vector<string> jobList = {"Upload" , "Download"};
@@ -137,7 +137,7 @@ public:
         return Status::OK;
     }
 
-    Status PatchFile(ServerContext* context, const RequestFile* request, ReplyFile* reply) 
+    Status DownloadFile(ServerContext* context, const RequestFile* request, ReplyFile* reply) 
     override 
     {
         cout << "user [" << _userID << "] requested " + request->name() << endl;
@@ -180,7 +180,7 @@ void RunServer(uint16_t port)
 
     // Register "service" as the instance through which we'll communicate with
     // clients. In this case it corresponds to an *synchronous* service.
-    PatcherServer service;
+    DownloaderServer service;
     builder.RegisterService(&service);
 
     // Finally assemble the server.

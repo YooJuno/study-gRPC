@@ -21,13 +21,13 @@ option objc_class_prefix = "JP";
 
 package jpeg;
 
-// The patch service definition.
-service Patcher 
+// The Download service definition.
+service Downloader 
 {
-    rpc PatchFile (RequestFile) returns (ReplyFile) {}
+    rpc DownloadFile (RequestFile) returns (ReplyFile) {}
     rpc Login (LoginInfo) returns (LoginResult) {}
-    rpc PatchJobEntries (Empty) returns (ReplyJobEntries) {}
-    rpc PatchDirEntries (Empty) returns (DirEntries) {}
+    rpc DownloadJobEntries (Empty) returns (ReplyJobEntries) {}
+    rpc DownloadDirEntries (Empty) returns (DirEntries) {}
 }
 
 message Empty {}

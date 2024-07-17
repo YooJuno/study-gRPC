@@ -1,0 +1,77 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "jpeg",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "jp_grpc_proto::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-jp_grpc_proto-Debug-cbf374c9d95eb1a6e6a5.json",
+					"name" : "jp_grpc_proto",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "jpeg_client::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-jpeg_client-Debug-46a8432a6e0fb1b4a307.json",
+					"name" : "jpeg_client",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "jpeg_server::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-jpeg_server-Debug-fcbbe8d25889586baedd.json",
+					"name" : "jpeg_server",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/juno/grpc/examples/cpp/jpeg/build",
+		"source" : "/home/juno/grpc/examples/cpp/jpeg"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 0
+	}
+}

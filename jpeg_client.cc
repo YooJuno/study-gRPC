@@ -22,6 +22,7 @@
 
 #include <fstream> 
 #include <vector>
+#include <tuple>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -34,11 +35,12 @@
 #include "jpeg.grpc.pb.h"
 #endif
 
+
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
-using jpeg::Patcher;
+using jpeg::Downloader;
 
 using jpeg::RequestFile;
 using jpeg::ReplyFile;
@@ -56,21 +58,23 @@ using namespace std;
 
 ABSL_FLAG(string, target, "localhost:50051", "Server address");
 
-class PatcherClient 
+class DownloaderClient 
 {
-private:
-    unique_ptr<Patcher::Stub> _stub;
-
 public:
-    PatcherClient(shared_ptr<Channel> channel)
-        : _stub (Patcher::NewStub(channel)) {}
+    DownloaderClient(shared_ptr<Channel> channel)
+        : _stub (Downloader::NewStub(channel)) {}
 
-    void InputLoginInfoByUser (string& id, string& pw)
+    //
+    auto InputLoginInfoByUser() -> std::pair<string, string> 
     {   
+        string id;
+        string pw;
         cout << "ID : ";
         cin >> id;
         cout << "PW : ";
         cin >> pw;
+
+        return make_pair(id, pw);
     }
 
     bool TryLoginToServer(const string& id, const string& pw)
@@ -95,13 +99,13 @@ public:
         }
     }
 
-    vector<string> PatchJobEntries()
+    auto DownloadJobEntries() -> vector<string> 
     {   
         Empty request; // Data we are sending to the server.
         ReplyJobEntries reply; // Container for the data we expect from the server.
         ClientContext context;
 
-        Status status = _stub->PatchJobEntries(&context, request, &reply); 
+        Status status = _stub->DownloadJobEntries(&context, request, &reply); 
 
         vector<string> output;
 
@@ -119,7 +123,7 @@ public:
         return output;
     }
     
-    void Patch(const string& fileName)  
+    void Download(const string& fileName)  
     {
         ClientContext context;
         RequestFile request; // Data we are sending to the server.
@@ -128,7 +132,7 @@ public:
         request.set_name(fileName);
 
         // The actual RPC. Send data
-        Status status = _stub->PatchFile(&context, request, &reply); 
+        Status status = _stub->DownloadFile(&context, request, &reply); 
 
         // Act upon its status.
         if (status.ok()) 
@@ -150,7 +154,7 @@ public:
         }
     }
     
-    vector<string> PatchDirEntries()
+    auto DownloadDirEntries() -> vector<string> 
     {   
         vector<string> output;
 
@@ -158,7 +162,7 @@ public:
         Empty request;
         DirEntries reply;
 
-        Status status = _stub->PatchDirEntries(&context, request, &reply);
+        Status status = _stub->DownloadDirEntries(&context, request, &reply);
 
         if (status.ok())
         {
@@ -173,6 +177,9 @@ public:
 
         return output;
     }
+
+private:
+    unique_ptr<Downloader::Stub> _stub;
 };
 
 string chooseFrom(vector<string> list)
@@ -189,6 +196,9 @@ string chooseFrom(vector<string> list)
     return list[num-1];
 }
 
+// Application Framework
+// ToolKit
+
 class GrpcService
 {
 public:
@@ -196,21 +206,27 @@ public:
     {
         absl::ParseCommandLine(argc, argv);
         string target_str = absl::GetFlag(FLAGS_target);
-        PatcherClient patcher(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+        
+        return doRun(target_str);
+    }
 
-        string userID;
-        string userPW;
-        patcher.InputLoginInfoByUser(userID, userPW);
+protected:
+    virtual int doRun(string target_str)
+    {
+        DownloaderClient Downloader(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+        string userId;
+        string userPw;
+        std::tie(userId, userPw) = Downloader.InputLoginInfoByUser();
 
-        auto permission = patcher.TryLoginToServer(userID, userPW);
+        auto permission = Downloader.TryLoginToServer(userId, userPw);
 
-        int errCnt=0;
+        int errCnt =0;
         
         while (!permission)
         {
             errCnt++;
 
-            if (errCnt>3)
+            if (errCnt > 3)
             {
                 cout << "3회 이상 시도하였습니다. 이용을 종료합니다\n";
                 return 0;
@@ -218,23 +234,23 @@ public:
 
             cout << "Incorrect ID or PW. Please retry\n";
 
-            patcher.InputLoginInfoByUser(userID, userPW);
-            permission = patcher.TryLoginToServer(userID, userPW);
+            std::tie(userId, userPw) = Downloader.InputLoginInfoByUser();
+            permission = Downloader.TryLoginToServer(userId, userPw);
         }
 
         if (permission)
         {
-            auto jobList = patcher.PatchJobEntries();
+            auto jobList = Downloader.DownloadJobEntries();
             cout << "\n[Choose what you wanna do]\n";
             auto jobName = chooseFrom(jobList);
 
             if (jobName == "Download")
             {
-                auto datasetEntries = patcher.PatchDirEntries();
+                auto datasetEntries = Downloader.DownloadDirEntries();
                 cout << "\n[Choose what you wanna download]\n";
                 auto fileName = chooseFrom(datasetEntries);
                 
-                patcher.Patch(fileName);
+                Downloader.Download(fileName);
             }
             else if (jobName == "Upload")
             {
@@ -245,13 +261,25 @@ public:
                 return 0;
             }
         }
+
         return 0;
     }
 
 };
 
+class FileBasedGrpcService: public GrpcService 
+{
+protected:
+    virtual int doRun(string target_str) 
+    {
+        return 0;
+    }
+};
+
 int main(int argc, char** argv)  
 {
-    GrpcService grpc;
-    return grpc.RunClient(argc, argv);
+    GrpcService service_org;
+    FileBasedGrpcService service;
+
+    return service_org.RunClient(argc, argv);
 }
