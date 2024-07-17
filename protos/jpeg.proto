@@ -27,7 +27,7 @@ service Patcher
     rpc PatchFile (RequestFile) returns (ReplyFile) {}
     rpc Login (LoginInfo) returns (LoginResult) {}
     rpc PatchJobEntries (Empty) returns (ReplyJobEntries) {}
-    rpc PatchDirInfo (Empty) returns (DirEntries) {}
+    rpc PatchDirEntries (Empty) returns (DirEntries) {}
 }
 
 message Empty {}

@@ -108,9 +108,7 @@ public:
         if (status.ok()) 
         {
             for (int i=0; i<reply.v_size(); i++)
-            { 
                 output.push_back(reply.entries(i));
-            }
         }
         else 
         {
@@ -152,7 +150,7 @@ public:
         }
     }
     
-    vector<string> PatchDatasetEntries()
+    vector<string> PatchDirEntries()
     {   
         vector<string> output;
 
@@ -160,7 +158,7 @@ public:
         Empty request;
         DirEntries reply;
 
-        Status status = _stub->PatchDirInfo(&context, request, &reply);
+        Status status = _stub->PatchDirEntries(&context, request, &reply);
 
         if (status.ok())
         {
@@ -183,7 +181,7 @@ string chooseFrom(vector<string> list)
     {
         cout << "[" << i+1 << "] " << list[i] << endl;
     }
-    
+
     cout << "Input num: " ;
     int num;
     cin >> num;
@@ -234,7 +232,7 @@ public:
 
             if (jobName == "Download")
             {
-                auto datasetEntries = patcher.PatchDatasetEntries();
+                auto datasetEntries = patcher.PatchDirEntries();
                 cout << "\n[Choose what you wanna download]\n";
                 auto fileName = chooseFrom(datasetEntries);
                 

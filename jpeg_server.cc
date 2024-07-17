@@ -130,7 +130,7 @@ class PatcherServer final : public Patcher::Service
         return output;
     }
 
-    Status PatchDirInfo(ServerContext* context, const Empty* request, DirEntries* reply) 
+    Status PatchDirEntries(ServerContext* context, const Empty* request, DirEntries* reply) 
     override 
     {
         string datasetPath("../../dataset/"); // 현재 경로를 받아와서 경로 탐색이 더 좋을지도...
