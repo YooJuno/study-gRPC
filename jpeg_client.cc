@@ -183,6 +183,7 @@ string chooseFrom(vector<string> list)
     {
         cout << "[" << i+1 << "] " << list[i] << endl;
     }
+    
     cout << "Input num: " ;
     int num;
     cin >> num;
