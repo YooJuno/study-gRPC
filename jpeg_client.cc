@@ -246,7 +246,8 @@ int main(int argc, char** argv)
     vector<string> job_list = patcher.PatchJobList(permission);
 
     cout << "\n[Choose job you wanna do]\n";
-    for(int i=0 ; i<job_list.size() ; i++){
+    for(int i=0 ; i<job_list.size() ; i++)
+    {
         cout << "[" << i+1 << "] " << job_list[i] << endl;
     }
     cout << "Input : " ;

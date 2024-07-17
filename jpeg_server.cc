@@ -108,7 +108,6 @@ class PatcherServer final : public Patcher::Service
 
                 // 현재 폴더와 상위 폴더는 무시
                 if (name == "." || name == "..") continue;
-                
                 if (option == FILE && isDir(dirPath + "/" + name)) continue;
                 if (option == Dir && isFile(dirPath + "/" + name)) continue;
 
@@ -146,10 +145,7 @@ class PatcherServer final : public Patcher::Service
         user_pw_ = request->pw(); cout << "user PW : " << user_pw_ << endl;
 
         if(user_id_ == "juno" && user_pw_ == "980220")
-        {
             reply->set_result("Login Success");
-
-        }
         else
             reply->set_result("Login Fail");
 

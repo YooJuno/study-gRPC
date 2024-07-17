@@ -48,14 +48,17 @@ message LoginInfo
     string id = 1;
     string pw = 2;
 }
+
 message LoginResult
 {
     string result = 1;
 }
+
 message Permission
 {
     bool permission = 1;
 }
+
 message ReplyJobList
 {
     repeated string list = 1;
