@@ -65,7 +65,7 @@ public:
     PatcherClient(shared_ptr<Channel> channel)
         : _stub (Patcher::NewStub(channel)) {}
 
-    void InputLoginInfoByUser (string& id, string& pw)
+    void inputLoginInfoByUser (string& id, string& pw)
     {   
         cout << "ID : ";
         cin >> id;
@@ -203,7 +203,7 @@ public:
 
         string userID;
         string userPW;
-        patcher.InputLoginInfoByUser(userID, userPW);
+        patcher.inputLoginInfoByUser(userID, userPW);
 
         auto permission = patcher.tryLoginToServer(userID, userPW);
 
@@ -221,7 +221,7 @@ public:
 
             cout << "Incorrect ID or PW. Please retry\n";
 
-            patcher.InputLoginInfoByUser(userID, userPW);
+            patcher.inputLoginInfoByUser(userID, userPW);
             permission = patcher.tryLoginToServer(userID, userPW);
         }
 
