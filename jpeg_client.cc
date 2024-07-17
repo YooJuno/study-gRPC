@@ -65,7 +65,7 @@ public:
     PatcherClient(shared_ptr<Channel> channel)
         : _stub (Patcher::NewStub(channel)) {}
 
-    void inputLoginInfoByUser (string& id, string& pw)
+    void InputLoginInfoByUser (string& id, string& pw)
     {   
         cout << "ID : ";
         cin >> id;
@@ -73,7 +73,7 @@ public:
         cin >> pw;
     }
 
-    bool tryLoginToServer(const string& id, const string& pw)
+    bool TryLoginToServer(const string& id, const string& pw)
     {
         ClientContext context;
         LoginInfo request;
@@ -152,7 +152,7 @@ public:
         }
     }
     
-    vector<string> patchDatasetEntries()
+    vector<string> PatchDatasetEntries()
     {   
         vector<string> output;
 
@@ -203,9 +203,9 @@ public:
 
         string userID;
         string userPW;
-        patcher.inputLoginInfoByUser(userID, userPW);
+        patcher.InputLoginInfoByUser(userID, userPW);
 
-        auto permission = patcher.tryLoginToServer(userID, userPW);
+        auto permission = patcher.TryLoginToServer(userID, userPW);
 
         int errCnt=0;
         
@@ -221,8 +221,8 @@ public:
 
             cout << "Incorrect ID or PW. Please retry\n";
 
-            patcher.inputLoginInfoByUser(userID, userPW);
-            permission = patcher.tryLoginToServer(userID, userPW);
+            patcher.InputLoginInfoByUser(userID, userPW);
+            permission = patcher.TryLoginToServer(userID, userPW);
         }
 
         if (permission)
@@ -233,7 +233,7 @@ public:
 
             if (jobName == "Download")
             {
-                auto datasetEntries = patcher.patchDatasetEntries();
+                auto datasetEntries = patcher.PatchDatasetEntries();
                 cout << "\n[Choose what you wanna download]\n";
                 auto fileName = chooseFrom(datasetEntries);
                 
