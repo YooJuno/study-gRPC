@@ -135,7 +135,7 @@ public:
         {
             string  fileImg =  reply.img(); 
             
-            cout << "file name : "+reply.name() << endl;
+            cout << "\nfile name : "+reply.name() << endl;
             cout << "size : " << reply.size() << " Bytes" << endl;
             cout << "date : "+reply.date() << endl;
             
@@ -185,16 +185,14 @@ string chooseFrom(vector<string> list)
     cout << "Input num: " ;
     int num;
     cin >> num;
-    
-    cout << "\n";
 
     return list[num-1];
 }
 
-class GrpcServiceClient
+class GrpcService
 {
 public:
-    int StartService(int argc, char** argv)
+    int RunClient(int argc, char** argv)
     {
         absl::ParseCommandLine(argc, argv);
         string target_str = absl::GetFlag(FLAGS_target);
@@ -254,27 +252,6 @@ public:
 
 int main(int argc, char** argv)  
 {
-    GrpcServiceClient grpcClient;
-    return grpcClient.StartService(argc, argv);
+    GrpcService grpc;
+    return grpc.RunClient(argc, argv);
 }
-
-
-// RemoteFilePatcher pather();
-// auto dirEntries = patcher.GetDirEntiries(".");
-// auto file = dirEntries[0].IsFile ? dirEntries[0].Path : "";
-// auto fileContent = patcher.GetFile(file);
-// ofstreawm ofs(path);
-// ofs.write(fileContent);
-
-// referential integrity of
-
-// [07/17]
-// class GrpcPictureService
-// {
-// public:
-//     int StartService()
-//     {
-//         return 0;
-//     }
-
-// };

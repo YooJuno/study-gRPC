@@ -66,81 +66,46 @@ using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-// Logic and data behind the server's behavior.
-// proto 파일에서 정의한 서비스 부분임.
 class PatcherServer final : public Patcher::Service 
 {
-    bool isDir(const string& path)
-    {
-        struct stat dirStat;
+private:
+    string _userID;
+    string _userPW;
 
-        if (stat(path.c_str(), &dirStat) != 0)
-        {
-            cout << path << " 경로 정보 알 수 없음" << endl;
-            return false;
-        }
-        else
-        {
-            return S_ISDIR(dirStat.st_mode);
-        }
-    }
-
-    bool isFile(const string& path)
-    {
-        struct stat fileStat;
-
-        if (stat(path.c_str(), &fileStat) != 0)
-        {
-            cout << path << " 경로 정보 알 수 없음" << endl;
-            return false;
-        }
-        else
-        {
-            return S_ISREG(fileStat.st_mode);
-        }
-    }
-
-    vector<string> getDirectoryInfo(const string& dirPath, int option = 0)
+public:
+    // reference from : https://bloodstrawberry.tistory.com/1295
+    vector<string> GetEntriesFrom(const string& dirPath)
     {
         vector<string> output;
         DIR* dir = opendir(dirPath.c_str());
-
         if (dir)
         {
             struct dirent* entry;
-
             while ((entry = readdir(dir)))
             {
                 string name = entry->d_name;
-
-                // 현재 폴더와 상위 폴더는 무시
-                if (name == "." || name == "..") continue;
-                if (option == FILE && isDir(dirPath + "/" + name)) continue;
-                if (option == Dir && isFile(dirPath + "/" + name)) continue;
-
+                if (name == "." || name == "..") continue; // 현재 폴더와 상위 폴더는 무시
                 output.push_back(name);
             }
-
             closedir(dir);
         }
-        else{
+        else
+        {
             cerr << "폴더 열기 실패" << endl;
         }
-
         return output;
     }
 
     Status PatchDirEntries(ServerContext* context, const Empty* request, DirEntries* reply) 
     override 
     {
-        string datasetPath("../../dataset/"); // 현재 경로를 받아와서 경로 탐색이 더 좋을지도...
-        
-        vector<string> dirEtries = getDirectoryInfo(datasetPath, 0); // 0-ALL , 1-FILE , 2-DIR
+        string datasetPath("../../dataset/");
+        vector<string> entries = GetEntriesFrom(datasetPath);
 
-        for(auto i=0 ; i<dirEtries.size() ; i++)
-            reply->add_entries(dirEtries[i]);
+        for(auto i=0 ; i<entries.size() ; i++)
+            reply->add_entries(entries[i]);
         
-        reply->set_v_size(dirEtries.size());
+        reply->set_v_size(entries.size());
 
         return Status::OK;
     }
@@ -199,22 +164,19 @@ class PatcherServer final : public Patcher::Service
         
         return Status::OK; // 보냈다? 이 부분 더 파볼 것.
     }
-
-private:
-    string _userID;
-    string _userPW;
 };
 
+// From here, It is Reference by gRPC Community. It is not editted by juno
 void RunServer(uint16_t port) 
 {
-    string server_address = absl::StrFormat("0.0.0.0:%d", port);
+    string serverAddress = absl::StrFormat("0.0.0.0:%d", port);
 
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
 
     // Listen on the given address without any authentication mechanism.
     ServerBuilder builder;
-    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
 
     // Register "service" as the instance through which we'll communicate with
     // clients. In this case it corresponds to an *synchronous* service.
@@ -223,7 +185,7 @@ void RunServer(uint16_t port)
 
     // Finally assemble the server.
     unique_ptr<Server> server(builder.BuildAndStart());
-    cout << "Server listening on " << server_address << endl;
+    cout << "Server listening on " << serverAddress << endl;
 
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.
@@ -234,6 +196,5 @@ int main(int argc, char** argv)
 {
     absl::ParseCommandLine(argc, argv);
     RunServer(absl::GetFlag(FLAGS_port));
-
     return 0;
 }
