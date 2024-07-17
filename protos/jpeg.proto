@@ -24,21 +24,22 @@ package jpeg;
 // The patch service definition.
 service Patcher 
 {
-    rpc DownloadImg (ImgRequest) returns (ImgReply) {}
+    rpc PatchFile (RequestFile) returns (ReplyFile) {}
     rpc Login (LoginInfo) returns (LoginResult) {}
-    // rpc PrintDirInfo (DirContents) returns (DirContents) {} // print라는 표현이 맞을까? 엄밀히 말하면 다운로드인데
+    rpc PatchJobList (Permission) returns (ReplyJobList) {}
+    rpc PrintDirInfo (Permission) returns (DirContents) {} // print라는 표현이 맞을까? 엄밀히 말하면 다운로드인데
 }
 
-message ImgRequest 
+message RequestFile
 {
     string name = 1;
 }
 
-message ImgReply 
+message ReplyFile
 {
-    int32 size = 1;  
-    bytes img = 2;
-    string name = 3;
+    bytes img = 1;
+    string name = 2;
+    int32 size = 3;  
     string date = 4;
 }
 
@@ -50,14 +51,20 @@ message LoginInfo
 message LoginResult
 {
     string result = 1;
-    repeated string entries = 2; // 배열. 디렉토리 안에 있는 
-    int32 count = 3;
+}
+message Permission
+{
+    bool permission = 1;
+}
+message ReplyJobList
+{
+    repeated string list = 1;
+    int32 v_size = 2;
 }
 
-
-// message DirContents
-// {
-//     repeated string entries = 1; // 배열. 디렉토리 안에 있는 
-//     int32 count = 2;
-// }
+message DirContents
+{
+    repeated string list = 1; // 배열. 디렉토리 안에 있는 
+    int32 v_size = 2;
+}
 

@@ -19,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -48,11 +49,17 @@ using grpc::ServerContext;
 using grpc::Status;
 
 using jpeg::Patcher;
-using jpeg::ImgRequest;
-using jpeg::ImgReply;
-using jpeg::DirContents;
+
+using jpeg::RequestFile;
+using jpeg::ReplyFile;
+
 using jpeg::LoginInfo;
 using jpeg::LoginResult;
+
+using jpeg::Permission;
+using jpeg::ReplyJobList;
+
+using jpeg::DirContents;
 
 using namespace std;
 
@@ -115,38 +122,55 @@ class PatcherServer final : public Patcher::Service
         return list;
     }
 
-    // Status Login(ServerContext* context, const LoginInfo* request, LoginResult* reply)
-    // override
-    // {
-    //     user_id_ = request->id();
-    //     user_pw_ = request->pw();
-    //     cout << "user ID : " << user_id_ << endl;
-    //     cout << "user PW : " << user_pw_ << endl;
-
-    //     reply->set_result("Success!");
-
-    //     return Status::OK;
-    // }
-
     Status PrintDirInfo(ServerContext* context, 
-                    const   DirContents* request, 
+                    const   Permission* request, 
                             DirContents* reply) 
     override 
     {
         string dataset_path("../../dataset/"); // 현재 경로를 받아와서 경로 탐색이 더 좋을지도...
         
-        vector<string> dir_entries = getDirectoryInfo(dataset_path, 0); // 0-ALL , 1-FILE , 2-DIR
+        vector<string> dir_list = getDirectoryInfo(dataset_path, 0); // 0-ALL , 1-FILE , 2-DIR
 
-        for(auto i=0 ; i<dir_entries.size() ; i++){
-            reply->add_entries(dir_entries[i]);
-        }
-        reply->set_count(dir_entries.size());
+        for(auto i=0 ; i<dir_list.size() ; i++)
+            reply->add_list(dir_list[i]);
         
+        reply->set_v_size(dir_list.size());
+
         return Status::OK;
     }
 
-    Status DownloadImg(ServerContext* context, const ImgRequest* request, 
-                    ImgReply* reply) 
+    Status Login(ServerContext* context, const LoginInfo* request, LoginResult* reply)
+    override
+    {
+        user_id_ = request->id(); cout << "user ID : " << user_id_ << endl;
+        user_pw_ = request->pw(); cout << "user PW : " << user_pw_ << endl;
+
+        if(user_id_ == "juno" && user_pw_ == "980220")
+        {
+            reply->set_result("Login Success");
+
+        }
+        else
+            reply->set_result("Login Fail");
+
+        return Status::OK;
+    }
+
+    Status PatchJobList (ServerContext* context, const Permission* request, ReplyJobList* reply)
+    override
+    {
+        vector<string> job_list = {"Upload" , "Download"};
+
+        for(int i=0 ; i<job_list.size() ; i++)
+            reply->add_list(job_list[i]);
+        
+        reply->set_v_size(job_list.size());
+
+        return Status::OK;
+    }
+
+    Status PatchFile(ServerContext* context, const RequestFile* request, 
+                    ReplyFile* reply) 
     override 
     {
         cout << "user [" << user_id_ << "] requested " + request->name() << endl;
@@ -154,15 +178,14 @@ class PatcherServer final : public Patcher::Service
         ifstream ifs;
         string img_folder_path("../../dataset/");
         string img_name(request->name());
-        string img_path = img_folder_path+img_name;
+        string img_path = img_folder_path + img_name;
         
-        // 이미지의 크기를 byte 단위로 구하기
         ifs.open(img_path, ios::binary);
-        string buffer_string((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
+        string img_buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
 
-        reply->set_size(buffer_string.length());
-        reply->set_img(buffer_string);
-        reply->set_name("download_"+request->name());
+        reply->set_img(img_buffer);
+        reply->set_name(img_name);
+        reply->set_size(img_buffer.length());
         
         string file_creation_time;
         struct stat attr;
