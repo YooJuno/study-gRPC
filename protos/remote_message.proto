@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package remote;
+
+service RemoteDownload
+{
+    rpc DownloadFile (RemoteRequest) returns (RemoteReply) {}
+    rpc Login (LoginInfo) returns (LoginResult) {}
+    rpc DownloadDirEntries (Empty) returns (DirEntries) {}
+}
+
+message Empty {}
+
+message RemoteRequest
+{
+    string name = 1;
+}
+
+message RemoteReply
+{
+    bytes file = 1;
+    string name = 2;
+    int32 size = 3;  
+    string date = 4;
+}
+
+message LoginInfo
+{
+    string id = 1;
+    string pw = 2;
+}
+
+message LoginResult
+{
+    bool result = 1;
+}
+
+message DirEntries
+{
+    repeated string entries = 1;
+}

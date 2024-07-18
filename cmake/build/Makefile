@@ -48,24 +48,13 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/juno/grpc/examples/cpp/jpeg
+CMAKE_SOURCE_DIR = /home/juno/grpc/examples/cpp/juno
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/juno/grpc/examples/cpp/jpeg/cmake/build
+CMAKE_BINARY_DIR = /home/juno/grpc/examples/cpp/juno/cmake/build
 
 #=============================================================================
 # Targets provided globally by CMake.
-
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
-
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
 
 # Special rule for the target edit_cache
 edit_cache:
@@ -78,11 +67,22 @@ edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
 
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
+
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/juno/grpc/examples/cpp/jpeg/cmake/build/CMakeFiles /home/juno/grpc/examples/cpp/jpeg/cmake/build/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/juno/grpc/examples/cpp/juno/cmake/build/CMakeFiles /home/juno/grpc/examples/cpp/juno/cmake/build/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/juno/grpc/examples/cpp/jpeg/cmake/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/juno/grpc/examples/cpp/juno/cmake/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -111,151 +111,151 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named jpeg_client
+# Target rules for targets named remote_server
 
 # Build rule for target.
-jpeg_client: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 jpeg_client
-.PHONY : jpeg_client
+remote_server: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 remote_server
+.PHONY : remote_server
 
 # fast build rule for target.
-jpeg_client/fast:
-	$(MAKE) -f CMakeFiles/jpeg_client.dir/build.make CMakeFiles/jpeg_client.dir/build
-.PHONY : jpeg_client/fast
+remote_server/fast:
+	$(MAKE) -f CMakeFiles/remote_server.dir/build.make CMakeFiles/remote_server.dir/build
+.PHONY : remote_server/fast
 
 #=============================================================================
-# Target rules for targets named jpeg_server
+# Target rules for targets named remote_client
 
 # Build rule for target.
-jpeg_server: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 jpeg_server
-.PHONY : jpeg_server
+remote_client: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 remote_client
+.PHONY : remote_client
 
 # fast build rule for target.
-jpeg_server/fast:
-	$(MAKE) -f CMakeFiles/jpeg_server.dir/build.make CMakeFiles/jpeg_server.dir/build
-.PHONY : jpeg_server/fast
+remote_client/fast:
+	$(MAKE) -f CMakeFiles/remote_client.dir/build.make CMakeFiles/remote_client.dir/build
+.PHONY : remote_client/fast
 
 #=============================================================================
-# Target rules for targets named jp_grpc_proto
+# Target rules for targets named remote_message_grpc_proto
 
 # Build rule for target.
-jp_grpc_proto: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 jp_grpc_proto
-.PHONY : jp_grpc_proto
+remote_message_grpc_proto: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 remote_message_grpc_proto
+.PHONY : remote_message_grpc_proto
 
 # fast build rule for target.
-jp_grpc_proto/fast:
-	$(MAKE) -f CMakeFiles/jp_grpc_proto.dir/build.make CMakeFiles/jp_grpc_proto.dir/build
-.PHONY : jp_grpc_proto/fast
+remote_message_grpc_proto/fast:
+	$(MAKE) -f CMakeFiles/remote_message_grpc_proto.dir/build.make CMakeFiles/remote_message_grpc_proto.dir/build
+.PHONY : remote_message_grpc_proto/fast
 
-jpeg.grpc.pb.o: jpeg.grpc.pb.cc.o
+remote_client.o: remote_client.cc.o
 
-.PHONY : jpeg.grpc.pb.o
-
-# target to build an object file
-jpeg.grpc.pb.cc.o:
-	$(MAKE) -f CMakeFiles/jp_grpc_proto.dir/build.make CMakeFiles/jp_grpc_proto.dir/jpeg.grpc.pb.cc.o
-.PHONY : jpeg.grpc.pb.cc.o
-
-jpeg.grpc.pb.i: jpeg.grpc.pb.cc.i
-
-.PHONY : jpeg.grpc.pb.i
-
-# target to preprocess a source file
-jpeg.grpc.pb.cc.i:
-	$(MAKE) -f CMakeFiles/jp_grpc_proto.dir/build.make CMakeFiles/jp_grpc_proto.dir/jpeg.grpc.pb.cc.i
-.PHONY : jpeg.grpc.pb.cc.i
-
-jpeg.grpc.pb.s: jpeg.grpc.pb.cc.s
-
-.PHONY : jpeg.grpc.pb.s
-
-# target to generate assembly for a file
-jpeg.grpc.pb.cc.s:
-	$(MAKE) -f CMakeFiles/jp_grpc_proto.dir/build.make CMakeFiles/jp_grpc_proto.dir/jpeg.grpc.pb.cc.s
-.PHONY : jpeg.grpc.pb.cc.s
-
-jpeg.pb.o: jpeg.pb.cc.o
-
-.PHONY : jpeg.pb.o
+.PHONY : remote_client.o
 
 # target to build an object file
-jpeg.pb.cc.o:
-	$(MAKE) -f CMakeFiles/jp_grpc_proto.dir/build.make CMakeFiles/jp_grpc_proto.dir/jpeg.pb.cc.o
-.PHONY : jpeg.pb.cc.o
+remote_client.cc.o:
+	$(MAKE) -f CMakeFiles/remote_client.dir/build.make CMakeFiles/remote_client.dir/remote_client.cc.o
+.PHONY : remote_client.cc.o
 
-jpeg.pb.i: jpeg.pb.cc.i
+remote_client.i: remote_client.cc.i
 
-.PHONY : jpeg.pb.i
+.PHONY : remote_client.i
 
 # target to preprocess a source file
-jpeg.pb.cc.i:
-	$(MAKE) -f CMakeFiles/jp_grpc_proto.dir/build.make CMakeFiles/jp_grpc_proto.dir/jpeg.pb.cc.i
-.PHONY : jpeg.pb.cc.i
+remote_client.cc.i:
+	$(MAKE) -f CMakeFiles/remote_client.dir/build.make CMakeFiles/remote_client.dir/remote_client.cc.i
+.PHONY : remote_client.cc.i
 
-jpeg.pb.s: jpeg.pb.cc.s
+remote_client.s: remote_client.cc.s
 
-.PHONY : jpeg.pb.s
+.PHONY : remote_client.s
 
 # target to generate assembly for a file
-jpeg.pb.cc.s:
-	$(MAKE) -f CMakeFiles/jp_grpc_proto.dir/build.make CMakeFiles/jp_grpc_proto.dir/jpeg.pb.cc.s
-.PHONY : jpeg.pb.cc.s
+remote_client.cc.s:
+	$(MAKE) -f CMakeFiles/remote_client.dir/build.make CMakeFiles/remote_client.dir/remote_client.cc.s
+.PHONY : remote_client.cc.s
 
-jpeg_client.o: jpeg_client.cc.o
+remote_message.grpc.pb.o: remote_message.grpc.pb.cc.o
 
-.PHONY : jpeg_client.o
+.PHONY : remote_message.grpc.pb.o
 
 # target to build an object file
-jpeg_client.cc.o:
-	$(MAKE) -f CMakeFiles/jpeg_client.dir/build.make CMakeFiles/jpeg_client.dir/jpeg_client.cc.o
-.PHONY : jpeg_client.cc.o
+remote_message.grpc.pb.cc.o:
+	$(MAKE) -f CMakeFiles/remote_message_grpc_proto.dir/build.make CMakeFiles/remote_message_grpc_proto.dir/remote_message.grpc.pb.cc.o
+.PHONY : remote_message.grpc.pb.cc.o
 
-jpeg_client.i: jpeg_client.cc.i
+remote_message.grpc.pb.i: remote_message.grpc.pb.cc.i
 
-.PHONY : jpeg_client.i
+.PHONY : remote_message.grpc.pb.i
 
 # target to preprocess a source file
-jpeg_client.cc.i:
-	$(MAKE) -f CMakeFiles/jpeg_client.dir/build.make CMakeFiles/jpeg_client.dir/jpeg_client.cc.i
-.PHONY : jpeg_client.cc.i
+remote_message.grpc.pb.cc.i:
+	$(MAKE) -f CMakeFiles/remote_message_grpc_proto.dir/build.make CMakeFiles/remote_message_grpc_proto.dir/remote_message.grpc.pb.cc.i
+.PHONY : remote_message.grpc.pb.cc.i
 
-jpeg_client.s: jpeg_client.cc.s
+remote_message.grpc.pb.s: remote_message.grpc.pb.cc.s
 
-.PHONY : jpeg_client.s
+.PHONY : remote_message.grpc.pb.s
 
 # target to generate assembly for a file
-jpeg_client.cc.s:
-	$(MAKE) -f CMakeFiles/jpeg_client.dir/build.make CMakeFiles/jpeg_client.dir/jpeg_client.cc.s
-.PHONY : jpeg_client.cc.s
+remote_message.grpc.pb.cc.s:
+	$(MAKE) -f CMakeFiles/remote_message_grpc_proto.dir/build.make CMakeFiles/remote_message_grpc_proto.dir/remote_message.grpc.pb.cc.s
+.PHONY : remote_message.grpc.pb.cc.s
 
-jpeg_server.o: jpeg_server.cc.o
+remote_message.pb.o: remote_message.pb.cc.o
 
-.PHONY : jpeg_server.o
+.PHONY : remote_message.pb.o
 
 # target to build an object file
-jpeg_server.cc.o:
-	$(MAKE) -f CMakeFiles/jpeg_server.dir/build.make CMakeFiles/jpeg_server.dir/jpeg_server.cc.o
-.PHONY : jpeg_server.cc.o
+remote_message.pb.cc.o:
+	$(MAKE) -f CMakeFiles/remote_message_grpc_proto.dir/build.make CMakeFiles/remote_message_grpc_proto.dir/remote_message.pb.cc.o
+.PHONY : remote_message.pb.cc.o
 
-jpeg_server.i: jpeg_server.cc.i
+remote_message.pb.i: remote_message.pb.cc.i
 
-.PHONY : jpeg_server.i
+.PHONY : remote_message.pb.i
 
 # target to preprocess a source file
-jpeg_server.cc.i:
-	$(MAKE) -f CMakeFiles/jpeg_server.dir/build.make CMakeFiles/jpeg_server.dir/jpeg_server.cc.i
-.PHONY : jpeg_server.cc.i
+remote_message.pb.cc.i:
+	$(MAKE) -f CMakeFiles/remote_message_grpc_proto.dir/build.make CMakeFiles/remote_message_grpc_proto.dir/remote_message.pb.cc.i
+.PHONY : remote_message.pb.cc.i
 
-jpeg_server.s: jpeg_server.cc.s
+remote_message.pb.s: remote_message.pb.cc.s
 
-.PHONY : jpeg_server.s
+.PHONY : remote_message.pb.s
 
 # target to generate assembly for a file
-jpeg_server.cc.s:
-	$(MAKE) -f CMakeFiles/jpeg_server.dir/build.make CMakeFiles/jpeg_server.dir/jpeg_server.cc.s
-.PHONY : jpeg_server.cc.s
+remote_message.pb.cc.s:
+	$(MAKE) -f CMakeFiles/remote_message_grpc_proto.dir/build.make CMakeFiles/remote_message_grpc_proto.dir/remote_message.pb.cc.s
+.PHONY : remote_message.pb.cc.s
+
+remote_server.o: remote_server.cc.o
+
+.PHONY : remote_server.o
+
+# target to build an object file
+remote_server.cc.o:
+	$(MAKE) -f CMakeFiles/remote_server.dir/build.make CMakeFiles/remote_server.dir/remote_server.cc.o
+.PHONY : remote_server.cc.o
+
+remote_server.i: remote_server.cc.i
+
+.PHONY : remote_server.i
+
+# target to preprocess a source file
+remote_server.cc.i:
+	$(MAKE) -f CMakeFiles/remote_server.dir/build.make CMakeFiles/remote_server.dir/remote_server.cc.i
+.PHONY : remote_server.cc.i
+
+remote_server.s: remote_server.cc.s
+
+.PHONY : remote_server.s
+
+# target to generate assembly for a file
+remote_server.cc.s:
+	$(MAKE) -f CMakeFiles/remote_server.dir/build.make CMakeFiles/remote_server.dir/remote_server.cc.s
+.PHONY : remote_server.cc.s
 
 # Help Target
 help:
@@ -263,23 +263,23 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... jpeg_client"
-	@echo "... jpeg_server"
-	@echo "... jp_grpc_proto"
-	@echo "... jpeg.grpc.pb.o"
-	@echo "... jpeg.grpc.pb.i"
-	@echo "... jpeg.grpc.pb.s"
-	@echo "... jpeg.pb.o"
-	@echo "... jpeg.pb.i"
-	@echo "... jpeg.pb.s"
-	@echo "... jpeg_client.o"
-	@echo "... jpeg_client.i"
-	@echo "... jpeg_client.s"
-	@echo "... jpeg_server.o"
-	@echo "... jpeg_server.i"
-	@echo "... jpeg_server.s"
+	@echo "... rebuild_cache"
+	@echo "... remote_server"
+	@echo "... remote_client"
+	@echo "... remote_message_grpc_proto"
+	@echo "... remote_client.o"
+	@echo "... remote_client.i"
+	@echo "... remote_client.s"
+	@echo "... remote_message.grpc.pb.o"
+	@echo "... remote_message.grpc.pb.i"
+	@echo "... remote_message.grpc.pb.s"
+	@echo "... remote_message.pb.o"
+	@echo "... remote_message.pb.i"
+	@echo "... remote_message.pb.s"
+	@echo "... remote_server.o"
+	@echo "... remote_server.i"
+	@echo "... remote_server.s"
 .PHONY : help
 
 

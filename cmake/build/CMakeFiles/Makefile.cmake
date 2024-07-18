@@ -72,7 +72,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/jpeg_client.dir/DependInfo.cmake"
-  "CMakeFiles/jpeg_server.dir/DependInfo.cmake"
-  "CMakeFiles/jp_grpc_proto.dir/DependInfo.cmake"
+  "CMakeFiles/remote_server.dir/DependInfo.cmake"
+  "CMakeFiles/remote_client.dir/DependInfo.cmake"
+  "CMakeFiles/remote_message_grpc_proto.dir/DependInfo.cmake"
   )
