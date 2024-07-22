@@ -36,7 +36,7 @@ Check the version of `cmake`:
 ```bash
 $ cmake --version
 ```
-cmake version 3.19.6
+
 
 Under Linux, the version of the system-wide `cmake` can often be too old. You can install a more recent version into your local installation directory as follows:
 
