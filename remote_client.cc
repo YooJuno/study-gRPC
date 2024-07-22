@@ -202,11 +202,11 @@ void RunClient(int argc, char** argv)
         
         service.printReply();
 
-        auto pathOfDownloadFolder = GetPathOfDownload();
-        if (pathOfDownloadFolder[pathOfDownloadFolder.length()-1] != '/')
-            pathOfDownloadFolder += '/';
+        auto pathOfDownload = GetPathOfDownload();
+        if (pathOfDownload[pathOfDownload.length()-1] != '/')
+            pathOfDownload += '/';
 
-        service.saveReplyTo(pathOfDownloadFolder);
+        service.saveReplyTo(pathOfDownload);
     }
     else
     {
