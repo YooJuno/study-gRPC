@@ -1,14 +1,3 @@
-<!-- # gRPC C++ Hello World Example
-
-You can find a complete set of instructions for building gRPC and running the
-Hello World app in the [C++ Quick Start][].
-
-[C++ Quick Start]: https://grpc.io/docs/languages/cpp/quickstart
-# study-gRPC
-
-# Build Command
- -->
-
 # gRPC STUDY
 
 ## 구현 환경
@@ -124,9 +113,9 @@ make
 
 - and then enter dataset path
 
-![Untitled](gRPC%20STUDY%20a53fcbb9e66f4d159cb7dcc13b9fa2d7/Untitled.png)
+![Untitled](images/Untitled.png)
 
-### SERVER
+### CLIENT
 
 ```bash
 ./remote_client
@@ -134,29 +123,29 @@ make
 
 - ID : juno , PW : 980220
     
-    ![Untitled](gRPC%20STUDY%20a53fcbb9e66f4d159cb7dcc13b9fa2d7/Untitled%201.png)
+    ![Untitled](images/Untitled%201.png)
     
 
 - Choose number you wanna download.
     
-    ![Untitled](gRPC%20STUDY%20a53fcbb9e66f4d159cb7dcc13b9fa2d7/Untitled%202.png)
+    ![Untitled](images/Untitled%202.png)
     
 
 - Then you can see the information of file you select.
     
-    ![Untitled](gRPC%20STUDY%20a53fcbb9e66f4d159cb7dcc13b9fa2d7/Untitled%203.png)
+    ![Untitled](images/Untitled%203.png)
     
 
 - Finally, Enter the path of Download Folder
     
-    ![Untitled](gRPC%20STUDY%20a53fcbb9e66f4d159cb7dcc13b9fa2d7/Untitled%204.png)
+    ![Untitled](images/Untitled%204.png)
     
 
 - You can see the picture in Download folder
     
-    ![Untitled](gRPC%20STUDY%20a53fcbb9e66f4d159cb7dcc13b9fa2d7/Untitled%205.png)
+    ![Untitled](images/Untitled%205.png)
     
-    ![Untitled](gRPC%20STUDY%20a53fcbb9e66f4d159cb7dcc13b9fa2d7/Untitled%206.png)
+    ![Untitled](images/Untitled%206.png)
     
 
 ### References
