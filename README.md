@@ -136,7 +136,7 @@ make
     ![Untitled](images/Untitled%203.png)
     
 
-- Finally, Enter the path of Download Folder
+- Last, Enter the path of Download Folder
     
     ![Untitled](images/Untitled%204.png)
     
