@@ -1,5 +1,0 @@
-/home/juno/grpc/examples/cpp/juno/cmake/build/CMakeFiles/edit_cache.dir
-/home/juno/grpc/examples/cpp/juno/cmake/build/CMakeFiles/rebuild_cache.dir
-/home/juno/grpc/examples/cpp/juno/cmake/build/CMakeFiles/remote_server.dir
-/home/juno/grpc/examples/cpp/juno/cmake/build/CMakeFiles/remote_client.dir
-/home/juno/grpc/examples/cpp/juno/cmake/build/CMakeFiles/remote_message_grpc_proto.dir

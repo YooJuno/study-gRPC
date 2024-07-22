@@ -1,2 +1,0 @@
-# Hashes of file build rules.
-430a3d4cf58d1e21ca25dd83bec8caaa remote_message.pb.cc
