@@ -25,15 +25,15 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using remote::RemoteDownload;
+using remote::RemoteCommunication;
 
 using remote::RemoteRequest;
 using remote::RemoteReply;
 
-using remote::LoginInfo;
+using remote::UserLoginInfo;
 using remote::LoginResult;
 
-using remote::DirEntries;
+using remote::EntriesOfDataset;
 
 using remote::Empty;
 
@@ -72,22 +72,22 @@ bool isDirOpened(DIR* dir)
     return dir;
 }
 
-class DownloadServer final : public RemoteDownload::Service 
+class Uploader final : public RemoteCommunication::Service 
 {
 public:
-    DownloadServer()
+    Uploader()
     {
         do
         {
-            _pathOfDatasetDir = inputDirPath();
-            if(_pathOfDatasetDir[_pathOfDatasetDir.length()-1] != '/')
-                _pathOfDatasetDir += '/';
-            _dir = opendir(_pathOfDatasetDir.c_str());
+            _pathOfDataset = inputDirPath();
+            if(_pathOfDataset[_pathOfDataset.length()-1] != '/')
+                _pathOfDataset += '/';
+            _dir = opendir(_pathOfDataset.c_str());
         }
         while (!isDirOpened(_dir));
     }
 
-    Status Login(ServerContext* context, const LoginInfo* request, LoginResult* reply) 
+    Status LoginToServer(ServerContext* context, const UserLoginInfo* request, LoginResult* reply) 
     override
     {
         _userId = request->id();
@@ -101,7 +101,7 @@ public:
         return Status::OK;
     }
 
-    Status DownloadEntriesOfDir (ServerContext* context, const Empty* request, DirEntries* reply) 
+    Status DownloadEntriesNameOfDataset(ServerContext* context, const Empty* request, EntriesOfDataset* reply) 
     override 
     {
         auto entries = getEntriesNameFrom(_dir);
@@ -112,18 +112,18 @@ public:
         return Status::OK;
     }
 
-    Status DownloadFile(ServerContext* context, const RemoteRequest* request, RemoteReply* reply) // 파일?
+    Status DownloadTargetFile(ServerContext* context, const RemoteRequest* request, RemoteReply* reply) // 파일?
     override 
     {
         ifstream ifs;
         string nameOfTargetFile(request->name());
-        string pathOfTargetFile = _pathOfDatasetDir + request->name(); // 이미지? 파일? 컨텐츠?
+        string pathOfTargetFile = _pathOfDataset + request->name();
         ifs.open(pathOfTargetFile, ios::binary);
-        string Buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
+        string buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
 
-        reply->set_buffer(Buffer);
+        reply->set_buffer(buffer);
         reply->set_name(nameOfTargetFile);
-        reply->set_size(Buffer.length());
+        reply->set_size(buffer.length());
         
         string creationTimeOfTargetFile;
         struct stat attr;
@@ -138,49 +138,31 @@ public:
 private:
     string _userId;
     string _userPw;
-    string _pathOfDatasetDir;
+    string _pathOfDataset;
     DIR* _dir;
 };
 
-class GrpcServiceServer
-{
-public:
-    int RunServer(int argc, char** argv) 
-    {
-        absl::ParseCommandLine(argc, argv);
+void RunServer(uint16_t port) {
+    std::string serverAddress = absl::StrFormat("0.0.0.0:%d", port);
+    Uploader service;
 
-        return doRun(absl::GetFlag(FLAGS_port));
-    }
-protected:
-    // ********************************
-    // ************ REMARK ************
-    // ********************************
-    // The contents of doRun() is a reference code 
-    // of "greeter_server.cc", from gRPC cpp Hello world example
-    virtual int doRun(uint16_t port)
-    {
-        string serverAddress = absl::StrFormat("0.0.0.0:%d", port);
-        grpc::EnableDefaultHealthCheckService(true);
-        grpc::reflection::InitProtoReflectionServerBuilderPlugin();
+    grpc::EnableDefaultHealthCheckService(true);
+    grpc::reflection::InitProtoReflectionServerBuilderPlugin();
+    ServerBuilder builder;
 
-        ServerBuilder builder;
-        builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
+    builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
 
-        DownloadServer service;
-        builder.RegisterService(&service);
+    builder.RegisterService(&service);
+    
+    std::unique_ptr<Server> server(builder.BuildAndStart());
+    std::cout << "Server listening on " << serverAddress << std::endl;
 
-        unique_ptr<Server> server(builder.BuildAndStart());
-        cout << "Server listening on " << serverAddress << endl;
+    server->Wait();
+}
 
-        server->Wait();
-
-        return 0;
-    }
-};
-
-int main(int argc, char** argv) 
-{
-    GrpcServiceServer grpc;
-
-    return grpc.RunServer(argc, argv);
+int main(int argc, char** argv) {
+    absl::ParseCommandLine(argc, argv);
+    RunServer(absl::GetFlag(FLAGS_port));
+    
+    return 0;
 }

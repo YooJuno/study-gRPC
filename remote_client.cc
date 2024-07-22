@@ -16,15 +16,15 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
-using remote::RemoteDownload;
+using remote::RemoteCommunication;
 
 using remote::RemoteRequest;
 using remote::RemoteReply;
 
-using remote::LoginInfo;
+using remote::UserLoginInfo;
 using remote::LoginResult;
 
-using remote::DirEntries;
+using remote::EntriesOfDataset;
 
 using remote::Empty;
 
@@ -32,22 +32,22 @@ using namespace std;
 
 ABSL_FLAG(string, target, "localhost:50051", "Server address");
 
-class DownloaderClient 
+class Downloader 
 {
 public:
-    DownloaderClient(shared_ptr<Channel> channel)
-        : _stub (RemoteDownload::NewStub(channel)) {}
+    Downloader(shared_ptr<Channel> channel)
+        : _stub (RemoteCommunication::NewStub(channel)) {}
 
     bool TryLoginToServer(const string& id, const string& pw)
     {
         ClientContext context;
-        LoginInfo request;
+        UserLoginInfo request;
         LoginResult reply;
 
         request.set_id(id);
         request.set_pw(pw);
 
-        Status status = _stub->Login(&context, request, &reply);
+        Status status = _stub->LoginToServer(&context, request, &reply);
 
         if (status.ok())
             return reply.result();
@@ -55,14 +55,14 @@ public:
             exit(-1);
     }
     
-    auto DownloadEntriesOfDir() -> vector<string> 
+    auto DownloadEntriesOfDataset() -> vector<string> 
     {   
         vector<string> output;
         ClientContext context;
         Empty request;
-        DirEntries reply;
+        EntriesOfDataset reply;
 
-        Status status = _stub->DownloadEntriesOfDir(&context, request, &reply);
+        Status status = _stub->DownloadEntriesNameOfDataset(&context, request, &reply);
 
         if (status.ok())
             for(auto i=0; i<reply.entries_size(); i++)
@@ -81,7 +81,7 @@ public:
         
         request.set_name(fileName);
 
-        Status status = _stub->DownloadFile(&context, request, &reply); 
+        Status status = _stub->DownloadTargetFile(&context, request, &reply); 
 
         if (status.ok())
             return reply; 
@@ -90,7 +90,7 @@ public:
     }
 
 private:
-    unique_ptr<RemoteDownload::Stub> _stub;
+    unique_ptr<RemoteCommunication::Stub> _stub;
 };
 
 auto inputLoginInfoByUser() -> pair<string, string> 
@@ -114,7 +114,7 @@ auto chooseOneOf(vector<string> list) -> string
     for (auto i=0; i<list.size(); i++)
         cout << "[" << i+1 << "] " << list[i] << endl;
 
-    cout << "Choose you wanna download \n: " ;
+    cout << "Choose you wanna download\n: " ;
     cin >> num;
 
     return list[num-1];
@@ -163,60 +163,49 @@ auto inputPathOfDownloadFolder() -> string
     return output;
 }
 
-class GrpcService
+void RunClient(int argc, char** argv)
 {
-public:
-    int RunClient(int argc, char** argv)
+    absl::ParseCommandLine(argc, argv);
+    auto targetStr = absl::GetFlag(FLAGS_target);
+
+    Downloader service(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
+    string userId;
+    string userPw;
+    bool permission = false;
+
+    for(int cnt=0; cnt<3 & !permission; cnt++)
     {
-        absl::ParseCommandLine(argc, argv);
-        auto targetStr = absl::GetFlag(FLAGS_target);
-        
-        return doRun(targetStr);
+        tie(userId, userPw) = inputLoginInfoByUser();
+        permission = service.TryLoginToServer(userId, userPw);
+        if (!permission) 
+            cout << "Incorrect ID or PW. Please retry\n";
     }
-
-protected:
-    virtual int doRun(string targetStr)
+    
+    if (permission)
     {
-        DownloaderClient Downloader(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
-        string userId;
-        string userPw;
-        bool permission = false;
-
-        for(int cnt=0; cnt<3 & !permission; cnt++)
-        {
-            tie(userId, userPw) = inputLoginInfoByUser();
-            permission = Downloader.TryLoginToServer(userId, userPw);
-            if (!permission) 
-                cout << "Incorrect ID or PW. Please retry\n";
-        }
+        auto datasetEntries = service.DownloadEntriesOfDataset();
+        auto contentName = chooseOneOf(datasetEntries);
         
-        if (permission)
-        {
-            auto datasetEntries = Downloader.DownloadEntriesOfDir();
-            auto contentName = chooseOneOf(datasetEntries);
-            
-            auto reply = Downloader.Download(contentName);
-            printReply(reply);
+        auto reply = service.Download(contentName);
+        printReply(reply);
 
-            auto pathOfDownloadFolder = inputPathOfDownloadFolder();
-            if (pathOfDownloadFolder[pathOfDownloadFolder.length()-1] != '/')
-                pathOfDownloadFolder += '/';
+        auto pathOfDownloadFolder = inputPathOfDownloadFolder();
+        if (pathOfDownloadFolder[pathOfDownloadFolder.length()-1] != '/')
+            pathOfDownloadFolder += '/';
 
-            saveReplyTo(pathOfDownloadFolder, reply);
-            
-            return 0;
-        }
-        else
-        {
-            cout << "Incorrect input more than 3 times.\n";\
-            exit(1);
-        }
+        saveReplyTo(pathOfDownloadFolder, reply);
     }
-};
+    else
+    {
+        cout << "Incorrect input more than 3 times.\n";\
+        exit(1);
+    }
+    
+}
 
 int main(int argc, char** argv)  
 {
-    GrpcService service;
+    RunClient(argc, argv);
 
-    return service.RunClient(argc, argv);
+    return 0;
 }
