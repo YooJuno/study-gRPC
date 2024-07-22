@@ -99,7 +99,7 @@ git clone https://github.com/YooJuno/study-gRPC
 cd study-gRPC
 mkdir -p cmake/build download
 cd cmake/build
-cmake -DCMAKE_PREFIX_PATH=$MY_INSTALL_DIR ../
+cmake -DCMAKE_PREFIX_PATH=$MY_INSTALL_DIR ../../
 make
 ```
 
