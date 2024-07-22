@@ -1,2 +1,0 @@
-/usr/bin/ar qc libremote_message_grpc_proto.a  CMakeFiles/remote_message_grpc_proto.dir/remote_message.grpc.pb.cc.o CMakeFiles/remote_message_grpc_proto.dir/remote_message.pb.cc.o
-/usr/bin/ranlib libremote_message_grpc_proto.a
