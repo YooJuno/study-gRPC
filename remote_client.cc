@@ -24,7 +24,7 @@ using remote::RemoteReply;
 using remote::UserLoginInfo;
 using remote::LoginResult;
 
-using remote::EntriesOfDataset;
+using remote::FileNamesOfDataset;
 
 using remote::Empty;
 
@@ -51,49 +51,103 @@ public:
 
         if (status.ok())
             return reply.result();
-        else        
-            exit(-1);
+                
+        return false;
     }
     
-    auto DownloadEntriesOfDataset() -> vector<string> 
+    auto ChooseFileNameToDownload() -> string 
     {   
-        vector<string> output;
+        vector<string> fileNames;
+        int num;
+        
+        do
+        {
+            fileNames = GetFileNamesOfDataset();
+        } 
+        while (fileNames[0] == "error");
+        
+        cout << "\n**** [List] ****\n";
+        for (auto i = 0; i < fileNames.size(); i++)
+            cout << "[" << i+1 << "] " << fileNames[i] << endl;
+    
+        cout << "Choose you wanna download\n: " ;
+        cin >> num;
+
+        return fileNames[num-1];
+    }
+    
+    auto GetFileNamesOfDataset() -> vector<string> 
+    {   
+        vector<string> result;
         ClientContext context;
         Empty request;
-        EntriesOfDataset reply;
+        FileNamesOfDataset reply;
 
-        Status status = _stub->DownloadEntriesNameOfDataset(&context, request, &reply);
+        Status status = _stub->GetFileNamesOfDataset(&context, request, &reply);
 
         if (status.ok())
-            for(auto i=0; i<reply.entries_size(); i++)
-                output.push_back(reply.entries(i));
+            for(auto i=0; i<reply.filenames_size(); i++)
+                result.push_back(reply.filenames(i));
         else
-            exit(-1);
+            result.push_back("error");
         
-        return output;
+        return result;
     }
 
-    auto Download(const string& fileName) -> RemoteReply
+    bool Download(const string& fileName)
     {
         ClientContext context;
         RemoteRequest request;
-        RemoteReply reply;
-        
+
         request.set_name(fileName);
 
-        Status status = _stub->DownloadTargetFile(&context, request, &reply); 
+        Status status = _stub->DownloadFile(&context, request, &_reply); 
 
         if (status.ok())
-            return reply; 
+            return true;
         else        
-            exit(-1);
+            return false;
+    }
+
+    void printReply()
+    {
+        const google::protobuf::Descriptor* descriptor = _reply.GetDescriptor();
+        const google::protobuf::Reflection* reflection = _reply.GetReflection();
+
+        cout << "\n***** [File info] *****\n";
+        for (auto i=1; i<descriptor->field_count(); i++) 
+        {
+            const google::protobuf::FieldDescriptor* field = descriptor->field(i);
+            cout << field->name() << " : ";
+
+            if (field->type() == google::protobuf::FieldDescriptor::TYPE_INT32) 
+                cout << reflection->GetInt32(_reply, field) << endl;
+            else if (field->type() == google::protobuf::FieldDescriptor::TYPE_STRING) 
+                cout << reflection->GetString(_reply, field) << endl;
+            else if (field->type() == google::protobuf::FieldDescriptor::TYPE_BOOL) 
+                cout << std::boolalpha << reflection->GetBool(_reply, field) << endl;
+            else 
+                cout << "Unknown" << endl;
+        }
+    }
+
+    void saveReplyTo(const string PathOfDownload)
+    {
+        string file = _reply.buffer();
+        string file_name = _reply.name();
+        
+        ofstream ofs;
+        ofs.open(PathOfDownload + file_name, ios::out | ios::binary);
+        ofs.write((char *)file.data(), file.length());           
+        ofs.close();
     }
 
 private:
     unique_ptr<RemoteCommunication::Stub> _stub;
+    RemoteReply _reply;
 };
 
-auto inputLoginInfoByUser() -> pair<string, string> 
+auto getLoginInfoByUser() -> pair<string, string> 
 {   
     string id;
     string pw;
@@ -106,61 +160,14 @@ auto inputLoginInfoByUser() -> pair<string, string>
     return make_pair(id, pw);
 }
 
-auto chooseOneOf(vector<string> list) -> string
+auto GetPathOfDownload() -> string
 {
-    int num;
+    string result;
 
-    cout << "\n**** [List] ****\n";
-    for (auto i=0; i<list.size(); i++)
-        cout << "[" << i+1 << "] " << list[i] << endl;
+    cout << "Enter path where you wanna put your file (ex: ../../download/) \n: ";
+    cin >> result;
 
-    cout << "Choose you wanna download\n: " ;
-    cin >> num;
-
-    return list[num-1];
-}
-
-void printReply(RemoteReply reply)
-{
-    const google::protobuf::Descriptor* descriptor = reply.GetDescriptor();
-    const google::protobuf::Reflection* reflection = reply.GetReflection();
-
-    cout << "\n***** [File info] *****\n";
-    for (auto i=1; i<descriptor->field_count(); i++) 
-    {
-        const google::protobuf::FieldDescriptor* field = descriptor->field(i);
-        cout << field->name() << " : ";
-
-        if (field->type() == google::protobuf::FieldDescriptor::TYPE_INT32) 
-            cout << reflection->GetInt32(reply, field) << endl;
-        else if (field->type() == google::protobuf::FieldDescriptor::TYPE_STRING) 
-            cout << reflection->GetString(reply, field) << endl;
-        else if (field->type() == google::protobuf::FieldDescriptor::TYPE_BOOL) 
-            cout << std::boolalpha << reflection->GetBool(reply, field) << endl;
-        else 
-            cout << "Unknown" << endl;
-    }
-}
-
-void saveReplyTo(const string PathOfDownloadDir, RemoteReply reply)
-{
-    auto file = reply.buffer();
-    auto file_name = reply.name();
-    
-    ofstream ofs;
-    ofs.open(PathOfDownloadDir + file_name, ios::out | ios::binary);
-    ofs.write((char *)file.data(), file.length());           
-    ofs.close();
-}
-
-auto inputPathOfDownloadFolder() -> string
-{
-    string output;
-
-    cout << "Input path where you wanna put your file (ex: ../../download/) \n: ";
-    cin >> output;
-
-    return output;
+    return result;
 }
 
 void RunClient(int argc, char** argv)
@@ -175,32 +182,37 @@ void RunClient(int argc, char** argv)
 
     for(int cnt=0; cnt<3 & !permission; cnt++)
     {
-        tie(userId, userPw) = inputLoginInfoByUser();
+        tie(userId, userPw) = getLoginInfoByUser();
         permission = service.TryLoginToServer(userId, userPw);
         if (!permission) 
             cout << "Incorrect ID or PW. Please retry\n";
     }
     
     if (permission)
-    {
-        auto datasetEntries = service.DownloadEntriesOfDataset();
-        auto contentName = chooseOneOf(datasetEntries);
+    {   
+        bool isDownloaded;
+        do
+        {
+            auto fileName = service.ChooseFileNameToDownload();
+            isDownloaded = service.Download(fileName);
+            if(!isDownloaded)
+                cout << "Can't Download [" << fileName << "]. Please retry.\n";
+        } 
+        while (!isDownloaded);
         
-        auto reply = service.Download(contentName);
-        printReply(reply);
+        service.printReply();
 
-        auto pathOfDownloadFolder = inputPathOfDownloadFolder();
+        auto pathOfDownloadFolder = GetPathOfDownload();
         if (pathOfDownloadFolder[pathOfDownloadFolder.length()-1] != '/')
             pathOfDownloadFolder += '/';
 
-        saveReplyTo(pathOfDownloadFolder, reply);
+        service.saveReplyTo(pathOfDownloadFolder);
     }
     else
     {
-        cout << "Incorrect input more than 3 times.\n";\
+        cout << "Incorrect access more than 3 times.\n";\
         exit(1);
     }
-    
 }
 
 int main(int argc, char** argv)  

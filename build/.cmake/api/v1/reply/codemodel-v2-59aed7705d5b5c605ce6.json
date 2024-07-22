@@ -1,0 +1,77 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "remote",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "remote_client::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-remote_client-Debug-f18b583464a9a126b319.json",
+					"name" : "remote_client",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "remote_message_grpc_proto::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-remote_message_grpc_proto-Debug-7ae5d931dd7f496067b8.json",
+					"name" : "remote_message_grpc_proto",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "remote_server::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-remote_server-Debug-708f4e19a491412cca90.json",
+					"name" : "remote_server",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/juno/grpc/examples/cpp/study-gRPC/build",
+		"source" : "/home/juno/grpc/examples/cpp/study-gRPC"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 0
+	}
+}

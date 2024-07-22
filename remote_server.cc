@@ -33,7 +33,7 @@ using remote::RemoteReply;
 using remote::UserLoginInfo;
 using remote::LoginResult;
 
-using remote::EntriesOfDataset;
+using remote::FileNamesOfDataset;
 
 using remote::Empty;
 
@@ -41,30 +41,30 @@ using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-auto inputDirPath() -> string
+auto GetPathOfDataset() -> string
 {
-    string output;
+    string result;
 
-    cout << "input dataset path (ex: ../../dataset/)\n: ";
-    cin >> output;
+    cout << "Enter dataset path (ex: ../../dataset/)\n: ";
+    cin >> result;
 
-    return output;
+    return result;
 }
 
-auto getEntriesNameFrom(DIR* dir) -> vector<string>
+auto GetFileNamesFrom(DIR* dir) -> vector<string>
 {
-    vector<string> output;
+    vector<string> result;
     struct dirent* entry;
 
     while ((entry = readdir(dir)))
     {
         string name = entry->d_name;
         if (name == "." || name == "..") continue;
-        output.push_back(name);
+        result.push_back(name);
     }
     rewinddir(dir);
 
-    return output;
+    return result;
 }
 
 bool isDirOpened(DIR* dir)
@@ -79,10 +79,13 @@ public:
     {
         do
         {
-            _pathOfDataset = inputDirPath();
+            _pathOfDataset = GetPathOfDataset();
             if(_pathOfDataset[_pathOfDataset.length()-1] != '/')
                 _pathOfDataset += '/';
             _dir = opendir(_pathOfDataset.c_str());
+
+            if (!_dir)
+                cout << "Can't open folder. Please retry.\n";
         }
         while (!isDirOpened(_dir));
     }
@@ -101,18 +104,18 @@ public:
         return Status::OK;
     }
 
-    Status DownloadEntriesNameOfDataset(ServerContext* context, const Empty* request, EntriesOfDataset* reply) 
+    Status GetFileNamesOfDataset(ServerContext* context, const Empty* request, FileNamesOfDataset* reply) 
     override 
     {
-        auto entries = getEntriesNameFrom(_dir);
+        auto fileNames = GetFileNamesFrom(_dir);
         
-        for (auto i=0; i<entries.size(); i++)
-            reply->add_entries(entries[i]);
+        for (auto i=0; i<fileNames.size(); i++)
+            reply->add_filenames(fileNames[i]);
 
         return Status::OK;
     }
 
-    Status DownloadTargetFile(ServerContext* context, const RemoteRequest* request, RemoteReply* reply) // 파일?
+    Status DownloadFile(ServerContext* context, const RemoteRequest* request, RemoteReply* reply) // 파일?
     override 
     {
         ifstream ifs;

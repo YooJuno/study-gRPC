@@ -1,0 +1,22 @@
+[
+{
+  "directory": "/home/juno/grpc/examples/cpp/study-gRPC/build",
+  "command": "/usr/bin/c++  -DCARES_STATICLIB -I/home/juno/grpc/examples/cpp/study-gRPC/build -isystem /include  -g   -o CMakeFiles/remote_server.dir/remote_server.cc.o -c /home/juno/grpc/examples/cpp/study-gRPC/remote_server.cc",
+  "file": "/home/juno/grpc/examples/cpp/study-gRPC/remote_server.cc"
+},
+{
+  "directory": "/home/juno/grpc/examples/cpp/study-gRPC/build",
+  "command": "/usr/bin/c++  -DCARES_STATICLIB -I/home/juno/grpc/examples/cpp/study-gRPC/build -isystem /include  -g   -o CMakeFiles/remote_client.dir/remote_client.cc.o -c /home/juno/grpc/examples/cpp/study-gRPC/remote_client.cc",
+  "file": "/home/juno/grpc/examples/cpp/study-gRPC/remote_client.cc"
+},
+{
+  "directory": "/home/juno/grpc/examples/cpp/study-gRPC/build",
+  "command": "/usr/bin/c++  -DCARES_STATICLIB -I/home/juno/grpc/examples/cpp/study-gRPC/build -isystem /include  -g   -o CMakeFiles/remote_message_grpc_proto.dir/remote_message.grpc.pb.cc.o -c /home/juno/grpc/examples/cpp/study-gRPC/build/remote_message.grpc.pb.cc",
+  "file": "/home/juno/grpc/examples/cpp/study-gRPC/build/remote_message.grpc.pb.cc"
+},
+{
+  "directory": "/home/juno/grpc/examples/cpp/study-gRPC/build",
+  "command": "/usr/bin/c++  -DCARES_STATICLIB -I/home/juno/grpc/examples/cpp/study-gRPC/build -isystem /include  -g   -o CMakeFiles/remote_message_grpc_proto.dir/remote_message.pb.cc.o -c /home/juno/grpc/examples/cpp/study-gRPC/build/remote_message.pb.cc",
+  "file": "/home/juno/grpc/examples/cpp/study-gRPC/build/remote_message.pb.cc"
+}
+]

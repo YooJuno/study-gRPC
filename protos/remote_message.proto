@@ -4,9 +4,9 @@ package remote;
 
 service RemoteCommunication
 {
-    rpc DownloadTargetFile (RemoteRequest) returns (RemoteReply) {}
+    rpc DownloadFile (RemoteRequest) returns (RemoteReply) {}
     rpc LoginToServer (UserLoginInfo) returns (LoginResult) {}
-    rpc DownloadEntriesNameOfDataset (Empty) returns (EntriesOfDataset) {}
+    rpc GetFileNamesOfDataset (Empty) returns (FileNamesOfDataset) {}
 }
 
 message Empty {}
@@ -35,7 +35,7 @@ message LoginResult
     bool result = 1;
 }
 
-message EntriesOfDataset
+message FileNamesOfDataset
 {
-    repeated string entries = 1;
+    repeated string filenames = 1;
 }
