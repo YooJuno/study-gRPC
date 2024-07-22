@@ -34,9 +34,9 @@ You need version 3.13 or later of `cmake`. Install it by following these instru
 Check the version of `cmake`:
 
 ```bash
-cmake --version
-cmake version 3.19.6
+$ cmake --version
 ```
+cmake version 3.19.6
 
 Under Linux, the version of the system-wide `cmake` can often be too old. You can install a more recent version into your local installation directory as follows:
 
