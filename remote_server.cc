@@ -59,10 +59,10 @@ auto getEntriesFrom(DIR* dir) -> vector<string>
     while ((entry = readdir(dir)))
     {
         string name = entry->d_name;
-        if (name == "." || name == "..") continue; // 현재 폴더와 상위 폴더는 무시
+        if (name == "." || name == "..") continue;
         output.push_back(name);
     }
-    closedir(dir);
+    rewinddir(dir);
 
     return output;
 }
@@ -112,12 +112,12 @@ public:
         return Status::OK;
     }
 
-    Status DownloadFile(ServerContext* context, const RemoteRequest* request, RemoteReply* reply) 
+    Status DownloadFile(ServerContext* context, const RemoteRequest* request, RemoteReply* reply) // 파일?
     override 
     {
         ifstream ifs;
         string imgName(request->name());
-        string imgPath = _pathOfDatasetDir + imgName;
+        string imgPath = _pathOfDatasetDir + imgName; // 이미지? 파일? 컨텐츠?
         ifs.open(imgPath, ios::binary);
         string imgBuffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
 
