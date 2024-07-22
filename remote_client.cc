@@ -55,6 +55,24 @@ public:
             exit(-1);
     }
     
+    auto DownloadEntriesOfDir() -> vector<string> 
+    {   
+        vector<string> output;
+        ClientContext context;
+        Empty request;
+        DirEntries reply;
+
+        Status status = _stub->DownloadEntriesOfDir(&context, request, &reply);
+
+        if (status.ok())
+            for(auto i=0; i<reply.entries_size(); i++)
+                output.push_back(reply.entries(i));
+        else
+            exit(-1);
+        
+        return output;
+    }
+
     auto Download(const string& fileName) -> RemoteReply
     {
         ClientContext context;
@@ -69,25 +87,6 @@ public:
             return reply; 
         else        
             exit(-1);
-            
-    }
-
-    auto DownloadDirEntries() -> vector<string> 
-    {   
-        vector<string> output;
-        ClientContext context;
-        Empty request;
-        DirEntries reply;
-
-        Status status = _stub->DownloadDirEntries(&context, request, &reply);
-
-        if (status.ok())
-            for(auto i=0; i<reply.entries_size(); i++)
-                output.push_back(reply.entries(i));
-        else
-            exit(-1);
-        
-        return output;
     }
 
 private:
@@ -107,7 +106,7 @@ auto inputLoginInfoByUser() -> pair<string, string>
     return make_pair(id, pw);
 }
 
-auto chooseContentFrom(vector<string> list) -> string
+auto chooseOneOf(vector<string> list) -> string
 {
     int num;
 
@@ -115,7 +114,7 @@ auto chooseContentFrom(vector<string> list) -> string
     for (auto i=0; i<list.size(); i++)
         cout << "[" << i+1 << "] " << list[i] << endl;
 
-    cout << "Choose what you wanna download \n: " ;
+    cout << "Choose you wanna download \n: " ;
     cin >> num;
 
     return list[num-1];
@@ -145,7 +144,7 @@ void printReply(RemoteReply reply)
 
 void saveReplyTo(const string PathOfDownloadDir, RemoteReply reply)
 {
-    auto file = reply.file();
+    auto file = reply.buffer();
     auto file_name = reply.name();
     
     ofstream ofs;
@@ -193,10 +192,10 @@ protected:
         
         if (permission)
         {
-            auto datasetEntries = Downloader.DownloadDirEntries();
-            auto fileName = chooseContentFrom(datasetEntries);
+            auto datasetEntries = Downloader.DownloadEntriesOfDir();
+            auto contentName = chooseOneOf(datasetEntries);
             
-            auto reply = Downloader.Download(fileName);
+            auto reply = Downloader.Download(contentName);
             printReply(reply);
 
             auto pathOfDownloadFolder = inputPathOfDownloadFolder();
@@ -204,15 +203,14 @@ protected:
                 pathOfDownloadFolder += '/';
 
             saveReplyTo(pathOfDownloadFolder, reply);
-        }
-        else
-        {
-            cout << "Incorrect input more than 3 times.\n";
             
             return 0;
         }
-
-        return 0;
+        else
+        {
+            cout << "Incorrect input more than 3 times.\n";\
+            exit(1);
+        }
     }
 };
 

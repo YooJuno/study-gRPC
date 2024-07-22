@@ -6,7 +6,7 @@ service RemoteDownload
 {
     rpc DownloadFile (RemoteRequest) returns (RemoteReply) {}
     rpc Login (LoginInfo) returns (LoginResult) {}
-    rpc DownloadDirEntries (Empty) returns (DirEntries) {}
+    rpc DownloadEntriesOfDir (Empty) returns (DirEntries) {}
 }
 
 message Empty {}
@@ -18,7 +18,7 @@ message RemoteRequest
 
 message RemoteReply
 {
-    bytes file = 1;
+    bytes buffer = 1;
     string name = 2;
     int32 size = 3;  
     string date = 4;

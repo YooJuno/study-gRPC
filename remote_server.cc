@@ -45,13 +45,13 @@ auto inputDirPath() -> string
 {
     string output;
 
-    cout << "input dataset path (ex: ../../dataset/) \n: ";
+    cout << "input dataset path (ex: ../../dataset/)\n: ";
     cin >> output;
 
     return output;
 }
 
-auto getEntriesFrom(DIR* dir) -> vector<string>
+auto getEntriesNameFrom(DIR* dir) -> vector<string>
 {
     vector<string> output;
     struct dirent* entry;
@@ -93,7 +93,7 @@ public:
         _userId = request->id();
         _userPw = request->pw();
 
-        if (_userId == "juno" && _userPw == "980220")
+        if (_userId == "juno" && _userPw == "980220") // 추후에 DB연동 시스템으로 확장 계획
             reply->set_result(true);
         else
             reply->set_result(false);
@@ -101,12 +101,12 @@ public:
         return Status::OK;
     }
 
-    Status DownloadDirEntries (ServerContext* context, const Empty* request, DirEntries* reply) 
+    Status DownloadEntriesOfDir (ServerContext* context, const Empty* request, DirEntries* reply) 
     override 
     {
-        auto entries = getEntriesFrom(_dir);
+        auto entries = getEntriesNameFrom(_dir);
         
-        for (auto i=0 ; i<entries.size() ; i++)
+        for (auto i=0; i<entries.size(); i++)
             reply->add_entries(entries[i]);
 
         return Status::OK;
@@ -116,21 +116,21 @@ public:
     override 
     {
         ifstream ifs;
-        string imgName(request->name());
-        string imgPath = _pathOfDatasetDir + imgName; // 이미지? 파일? 컨텐츠?
-        ifs.open(imgPath, ios::binary);
-        string imgBuffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
+        string nameOfTargetFile(request->name());
+        string pathOfTargetFile = _pathOfDatasetDir + request->name(); // 이미지? 파일? 컨텐츠?
+        ifs.open(pathOfTargetFile, ios::binary);
+        string Buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
 
-        reply->set_file(imgBuffer);
-        reply->set_name(imgName);
-        reply->set_size(imgBuffer.length());
+        reply->set_buffer(Buffer);
+        reply->set_name(nameOfTargetFile);
+        reply->set_size(Buffer.length());
         
-        string fileCreationTime;
+        string creationTimeOfTargetFile;
         struct stat attr;
-        if (stat(imgPath.c_str(), &attr) == 0) 
-            fileCreationTime = ctime(&attr.st_ctime);
+        if (stat(pathOfTargetFile.c_str(), &attr) == 0) 
+            creationTimeOfTargetFile = ctime(&attr.st_ctime);
 
-        reply->set_date(fileCreationTime); 
+        reply->set_date(creationTimeOfTargetFile); 
         
         return Status::OK;
     }
@@ -180,7 +180,7 @@ protected:
 
 int main(int argc, char** argv) 
 {
-    GrpcServiceServer service;
+    GrpcServiceServer grpc;
 
-    return service.RunServer(argc, argv);
+    return grpc.RunServer(argc, argv);
 }
