@@ -127,7 +127,6 @@ void printReply(RemoteReply reply)
     const google::protobuf::Reflection* reflection = reply.GetReflection();
 
     cout << "\n***** [File info] *****\n";
-    // i=1? => Assume that the 0th number is a file or folder.
     for (auto i=1; i<descriptor->field_count(); i++) 
     {
         const google::protobuf::FieldDescriptor* field = descriptor->field(i);
@@ -155,7 +154,7 @@ void saveReplyTo(const string PathOfDownloadDir, RemoteReply reply)
     ofs.close();
 }
 
-auto inputPathForSave() -> string
+auto inputPathOfDownloadFolder() -> string
 {
     string output;
 
@@ -199,7 +198,12 @@ protected:
             
             auto reply = Downloader.Download(fileName);
             printReply(reply);
-            saveReplyTo(inputPathForSave(), reply);
+
+            auto pathOfDownloadFolder = inputPathOfDownloadFolder();
+            if (pathOfDownloadFolder[pathOfDownloadFolder.length()-1] != '/')
+                pathOfDownloadFolder += '/';
+
+            saveReplyTo(pathOfDownloadFolder, reply);
         }
         else
         {

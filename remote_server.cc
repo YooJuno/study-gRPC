@@ -45,7 +45,7 @@ auto inputDirPath() -> string
 {
     string output;
 
-    cout << "input dataset path (ex: ../../dataset) \n: ";
+    cout << "input dataset path (ex: ../../dataset/) \n: ";
     cin >> output;
 
     return output;
@@ -79,8 +79,10 @@ public:
     {
         do
         {
-            auto PathOfDatasetDir = inputDirPath();
-            _dir = opendir(PathOfDatasetDir.c_str());
+            _pathOfDatasetDir = inputDirPath();
+            if(_pathOfDatasetDir[_pathOfDatasetDir.length()-1] != '/')
+                _pathOfDatasetDir += '/';
+            _dir = opendir(_pathOfDatasetDir.c_str());
         }
         while (!isDirOpened(_dir));
     }
@@ -114,9 +116,8 @@ public:
     override 
     {
         ifstream ifs;
-        string imgFolderPath("../../dataset/");
         string imgName(request->name());
-        string imgPath = imgFolderPath + imgName;
+        string imgPath = _pathOfDatasetDir + imgName;
         ifs.open(imgPath, ios::binary);
         string imgBuffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
 
@@ -137,6 +138,7 @@ public:
 private:
     string _userId;
     string _userPw;
+    string _pathOfDatasetDir;
     DIR* _dir;
 };
 
