@@ -82,9 +82,9 @@ The following commands build and locally install gRPC and Protocol Buffers:
 cd grpc
 mkdir -p cmake/build
 pushd cmake/build
-cmake -DgRPC_INSTALL=ON **\**
-      -DgRPC_BUILD_TESTS=OFF **\**
-      -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR **\**
+cmake -DgRPC_INSTALL=ON \
+      -DgRPC_BUILD_TESTS=OFF \
+      -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR \
       ../..
 make -j 4
 make install
@@ -123,7 +123,7 @@ make
 ./remote_client
 ```
 
-- ID : juno , PW : 980220
+- Enter ID, Password
     
     ![Untitled](images/Untitled%201.png)
     
