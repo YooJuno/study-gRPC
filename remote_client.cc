@@ -207,11 +207,8 @@ auto GetPathOfDownload() -> string
     return result;
 }
 
-void RunClient(int argc, char** argv)
+void RunClient(string targetStr)
 {
-    absl::ParseCommandLine(argc, argv);
-    auto targetStr = absl::GetFlag(FLAGS_target);
-
     grpc::ChannelArguments args;
     args.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GB */);
     Downloader service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
@@ -257,7 +254,8 @@ void RunClient(int argc, char** argv)
 
 int main(int argc, char** argv)  
 {
-    RunClient(argc, argv);
+    absl::ParseCommandLine(argc, argv);
+    RunClient(absl::GetFlag(FLAGS_target));
 
     return 0;
 }

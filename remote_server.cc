@@ -187,7 +187,8 @@ private:
     DIR* _dir;
 };
 
-void RunServer(uint16_t port) {
+void RunServer(uint16_t port) 
+{
     std::string serverAddress = absl::StrFormat("0.0.0.0:%d", port);
     Uploader service;
 
@@ -211,7 +212,8 @@ void RunServer(uint16_t port) {
     server->Wait();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) 
+{
     absl::ParseCommandLine(argc, argv);
     RunServer(absl::GetFlag(FLAGS_port));
     
