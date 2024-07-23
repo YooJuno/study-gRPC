@@ -27,15 +27,11 @@ using grpc::Status;
 using grpc::ServerWriter;
 
 using remote::RemoteCommunication;
-
 using remote::RemoteRequest;
 using remote::File;
-
 using remote::UserLoginInfo;
 using remote::LoginResult;
-
 using remote::FileNamesOfDataset;
-
 using remote::Empty;
 
 using namespace std;
@@ -206,8 +202,6 @@ void RunServer(uint16_t port)
     
     std::unique_ptr<Server> server(builder.BuildAndStart());
     std::cout << "Server listening on " << serverAddress << std::endl;
-
-
 
     server->Wait();
 }

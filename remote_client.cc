@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 #include <fstream> 
-#include <tuple>
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -18,15 +17,11 @@ using grpc::Status;
 using grpc::ClientReader;
 
 using remote::RemoteCommunication;
-
 using remote::RemoteRequest;
 using remote::File;
-
 using remote::UserLoginInfo;
 using remote::LoginResult;
-
 using remote::FileNamesOfDataset;
-
 using remote::Empty;
 
 using namespace std;
@@ -247,7 +242,7 @@ void RunClient(string targetStr)
     }
     else
     {
-        cout << "Incorrect access more than 3 times.\n";\
+        cout << "Incorrect access 3 times.\n";\
         exit(1);
     }
 }
