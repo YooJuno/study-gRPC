@@ -27,19 +27,19 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 49,
+				"line" : 141,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 54,
+				"line" : 146,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 46,
+				"line" : 138,
 				"parent" : 0
 			}
 		]
@@ -51,6 +51,9 @@
 			[
 				{
 					"fragment" : "-g  "
+				},
+				{
+					"fragment" : "-std=c++17"
 				}
 			],
 			"defines" : 

@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named zip_folder
+
+# Build rule for target.
+zip_folder: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 zip_folder
+.PHONY : zip_folder
+
+# fast build rule for target.
+zip_folder/fast:
+	$(MAKE) -f CMakeFiles/zip_folder.dir/build.make CMakeFiles/zip_folder.dir/build
+.PHONY : zip_folder/fast
+
+#=============================================================================
 # Target rules for targets named remote_server
 
 # Build rule for target.
@@ -257,6 +270,33 @@ remote_server.cc.s:
 	$(MAKE) -f CMakeFiles/remote_server.dir/build.make CMakeFiles/remote_server.dir/remote_server.cc.s
 .PHONY : remote_server.cc.s
 
+zip_folder.o: zip_folder.cpp.o
+
+.PHONY : zip_folder.o
+
+# target to build an object file
+zip_folder.cpp.o:
+	$(MAKE) -f CMakeFiles/zip_folder.dir/build.make CMakeFiles/zip_folder.dir/zip_folder.cpp.o
+.PHONY : zip_folder.cpp.o
+
+zip_folder.i: zip_folder.cpp.i
+
+.PHONY : zip_folder.i
+
+# target to preprocess a source file
+zip_folder.cpp.i:
+	$(MAKE) -f CMakeFiles/zip_folder.dir/build.make CMakeFiles/zip_folder.dir/zip_folder.cpp.i
+.PHONY : zip_folder.cpp.i
+
+zip_folder.s: zip_folder.cpp.s
+
+.PHONY : zip_folder.s
+
+# target to generate assembly for a file
+zip_folder.cpp.s:
+	$(MAKE) -f CMakeFiles/zip_folder.dir/build.make CMakeFiles/zip_folder.dir/zip_folder.cpp.s
+.PHONY : zip_folder.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -264,6 +304,7 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
+	@echo "... zip_folder"
 	@echo "... rebuild_cache"
 	@echo "... remote_server"
 	@echo "... remote_client"
@@ -280,6 +321,9 @@ help:
 	@echo "... remote_server.o"
 	@echo "... remote_server.i"
 	@echo "... remote_server.s"
+	@echo "... zip_folder.o"
+	@echo "... zip_folder.i"
+	@echo "... zip_folder.s"
 .PHONY : help
 
 

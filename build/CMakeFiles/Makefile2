@@ -53,6 +53,7 @@ CMAKE_BINARY_DIR = /home/juno/grpc/examples/cpp/study-gRPC/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
+all: CMakeFiles/zip_folder.dir/all
 all: CMakeFiles/remote_server.dir/all
 all: CMakeFiles/remote_client.dir/all
 all: CMakeFiles/remote_message_grpc_proto.dir/all
@@ -65,11 +66,39 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
+clean: CMakeFiles/zip_folder.dir/clean
 clean: CMakeFiles/remote_server.dir/clean
 clean: CMakeFiles/remote_client.dir/clean
 clean: CMakeFiles/remote_message_grpc_proto.dir/clean
 
 .PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/zip_folder.dir
+
+# All Build rule for target.
+CMakeFiles/zip_folder.dir/all:
+	$(MAKE) -f CMakeFiles/zip_folder.dir/build.make CMakeFiles/zip_folder.dir/depend
+	$(MAKE) -f CMakeFiles/zip_folder.dir/build.make CMakeFiles/zip_folder.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/juno/grpc/examples/cpp/study-gRPC/build/CMakeFiles --progress-num=9,10 "Built target zip_folder"
+.PHONY : CMakeFiles/zip_folder.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/zip_folder.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/juno/grpc/examples/cpp/study-gRPC/build/CMakeFiles 2
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/zip_folder.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/juno/grpc/examples/cpp/study-gRPC/build/CMakeFiles 0
+.PHONY : CMakeFiles/zip_folder.dir/rule
+
+# Convenience name for target.
+zip_folder: CMakeFiles/zip_folder.dir/rule
+
+.PHONY : zip_folder
+
+# clean rule for target.
+CMakeFiles/zip_folder.dir/clean:
+	$(MAKE) -f CMakeFiles/zip_folder.dir/build.make CMakeFiles/zip_folder.dir/clean
+.PHONY : CMakeFiles/zip_folder.dir/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/remote_server.dir

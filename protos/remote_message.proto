@@ -38,6 +38,12 @@ message LoginResult
     bool result = 1;
 }
 
+message FileList
+{
+    string name = 1;
+    bool isdir = 2;
+}
+
 message FileNamesOfDataset
 {
     repeated string filenames = 1;

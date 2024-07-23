@@ -17,6 +17,8 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
+#include <filesystem>
+#include <zip.h>
 #define FILE (1)
 #define Dir (2)
 
@@ -37,6 +39,40 @@ using remote::Empty;
 using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
+
+void addFolderToZip(zip_t* zip, const string& folderPath, const string& zipPath) {
+    for (const auto& entry : filesystem::recursive_directory_iterator(folderPath)) {
+        if (entry.is_directory()) continue;
+
+        string filePath = entry.path().string();
+        string fileNameInZip = zipPath + entry.path().string().substr(folderPath.length() + 1);
+
+        zip_source_t* source = zip_source_file(zip, filePath.c_str(), 0, 0);
+        if (source == nullptr) {
+            cerr << "Failed to add file to zip: " << filePath << endl;
+            continue;
+        }
+
+        zip_file_add(zip, fileNameInZip.c_str(), source, ZIP_FL_OVERWRITE);
+    }
+}
+
+bool zipFolder(const string& folderPath, const string& zipFilePath)
+{
+    int errorp;
+    zip_t* zip = zip_open(zipFilePath.c_str(), ZIP_CREATE | ZIP_TRUNCATE, &errorp);
+    if (zip == nullptr) {
+        zip_error_t error;
+        zip_error_init_with_code(&error, errorp);
+        zip_error_fini(&error);
+        return false;
+    }
+    
+    addFolderToZip(zip, folderPath, "");
+    zip_close(zip);
+
+    return true;
+}
 
 auto GetPathOfDataset() -> string
 {
@@ -76,10 +112,10 @@ public:
     {
         do
         {
-            _pathOfDataset = GetPathOfDataset();
-            if(_pathOfDataset[_pathOfDataset.length()-1] != '/')
-                _pathOfDataset += '/';
-            _dir = opendir(_pathOfDataset.c_str());
+            _datasetPath = GetPathOfDataset();
+            if(_datasetPath[_datasetPath.length()-1] != '/')
+                _datasetPath += '/';
+            _dir = opendir(_datasetPath.c_str());
 
             if (!_dir)
                 cout << "Can't open folder. Please retry.\n";
@@ -116,9 +152,17 @@ public:
     override 
     {
         ifstream ifs;
-        string nameOfTargetFile(request->name());
-        string pathOfTargetFile = _pathOfDataset + request->name();
-        ifs.open(pathOfTargetFile, ios::binary);
+        string targetName(request->name());
+        auto targetPath = _datasetPath + targetName;
+
+        bool isTargetFolder = filesystem::is_directory((filesystem::path)targetPath);
+        if(isTargetFolder)
+        {
+            targetName += ".zip";
+            bool success = zipFolder(targetPath, targetPath + targetName);
+        }
+        
+        ifs.open(targetPath + targetName, ios::binary);
 
         if(!ifs)
             cout << "failed to open file\n";
@@ -126,20 +170,24 @@ public:
         string buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
         ifs.close();
 
+        if(isTargetFolder)
+            filesystem::remove(targetPath);
+
         cout << buffer.size() << endl;
 
         reply->set_buffer(buffer);
         cout << reply->buffer().length()<<endl;
-        reply->set_name(nameOfTargetFile);
+        reply->set_name(targetName);
         reply->set_size(buffer.length());
         
         struct stat attr;
-        if (stat(pathOfTargetFile.c_str(), &attr) == 0) 
+        if (stat(targetPath.c_str(), &attr) == 0) 
         {
             string creationTimeOfTargetFile = ctime(&attr.st_ctime);
             creationTimeOfTargetFile[creationTimeOfTargetFile.length()-1] = '\0';
             reply->set_date(creationTimeOfTargetFile); 
         }
+        
         return Status::OK;
     }
     
@@ -150,9 +198,9 @@ public:
         File chunk;
         struct stat attr;
 
-        string nameOfTargetFile(request->name());
-        string pathOfTargetFile = _pathOfDataset + request->name();
-        ifs.open(pathOfTargetFile, ios::binary);
+        string targetName(request->name());
+        string targetPath = _datasetPath + request->name();
+        ifs.open(targetPath, ios::binary);
 
         if(!ifs)
             cout << "failed to open file\n";
@@ -161,10 +209,10 @@ public:
         ifs.close();
 
         chunk.set_buffer(buffer);
-        chunk.set_name(nameOfTargetFile);
+        chunk.set_name(targetName);
         chunk.set_size(buffer.length());
         
-        if (stat(pathOfTargetFile.c_str(), &attr) == 0) 
+        if (stat(targetPath.c_str(), &attr) == 0) 
         {
             string creationTimeOfTargetFile = ctime(&attr.st_ctime);
             creationTimeOfTargetFile[creationTimeOfTargetFile.length()-1] = '\0';
@@ -179,7 +227,7 @@ public:
 private:
     string _userId;
     string _userPw;
-    string _pathOfDataset;
+    string _datasetPath;
     DIR* _dir;
 };
 

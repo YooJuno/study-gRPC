@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_FLAGS = -g   -std=c++17
 
-CXX_DEFINES = -DCARES_STATICLIB
+CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/juno/grpc/examples/cpp/study-gRPC/build -isystem /include 
+CXX_INCLUDES = -I/home/juno/grpc/examples/cpp/study-gRPC/build 
 

@@ -11,6 +11,7 @@
 		"commands" : 
 		[
 			"add_executable",
+			"link_directories",
 			"target_link_libraries",
 			"include_directories"
 		],
@@ -26,19 +27,25 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 63,
+				"line" : 155,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 64,
+				"line" : 120,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 46,
+				"line" : 156,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 138,
 				"parent" : 0
 			}
 		]
@@ -50,23 +57,26 @@
 			[
 				{
 					"fragment" : "-g  "
+				},
+				{
+					"fragment" : "-std=c++17"
 				}
 			],
 			"defines" : 
 			[
 				{
-					"backtrace" : 2,
+					"backtrace" : 3,
 					"define" : "CARES_STATICLIB"
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"path" : "/home/juno/grpc/examples/cpp/study-gRPC/build"
 				},
 				{
-					"backtrace" : 2,
+					"backtrace" : 3,
 					"isSystem" : true,
 					"path" : "/include"
 				}
@@ -81,7 +91,7 @@
 	"dependencies" : 
 	[
 		{
-			"backtrace" : 2,
+			"backtrace" : 3,
 			"id" : "remote_message_grpc_proto::@6890427a1f51a3e7e1df"
 		}
 	],
@@ -100,27 +110,40 @@
 			},
 			{
 				"backtrace" : 2,
+				"fragment" : "-L/usr/usr/lib/x86_64-linux-gnu",
+				"role" : "libraryPath"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/usr/usr/lib/x86_64-linux-gnu",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 3,
 				"fragment" : "libremote_message_grpc_proto.a",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 2,
+				"backtrace" : 3,
 				"fragment" : "/lib/libabsl_flags_parse.a",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 2,
+				"backtrace" : 3,
 				"fragment" : "/lib/libgrpc++_reflection.a",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 2,
+				"backtrace" : 3,
 				"fragment" : "/lib/libgrpc++.a",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 2,
+				"backtrace" : 3,
 				"fragment" : "/lib/libprotobuf.a",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lzip",
 				"role" : "libraries"
 			},
 			{

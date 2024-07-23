@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/zip_folder.dir/zip_folder.cpp.o  -o zip_folder   -L/usr/usr/lib/x86_64-linux-gnu  -Wl,-rpath,/usr/usr/lib/x86_64-linux-gnu -lzip 
