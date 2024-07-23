@@ -87,7 +87,7 @@ public:
         Status status = _stub->GetFileNamesOfDataset(&context, request, &reply);
 
         if (status.ok())
-            for(const auto i : reply.filenames())
+            for(const auto& i : reply.filenames())
                 result.push_back(i);
         else
             result.push_back("error");
