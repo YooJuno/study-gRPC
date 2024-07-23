@@ -97,7 +97,7 @@ public:
         _userId = request->id();
         _userPw = request->pw();
 
-        if (_userId == "juno" && _userPw == "980220") // 추후에 DB연동 시스템으로 확장 계획
+        if (_userId == "juno" && _userPw == "980220") // 추후에 DB연동 시스템으로 확장.
             reply->set_result(true);
         else
             reply->set_result(false);
@@ -110,8 +110,8 @@ public:
     {
         auto fileNames = GetFileNamesFrom(_dir);
         
-        for (auto i=0; i<fileNames.size(); i++)
-            reply->add_filenames(fileNames[i]);
+        for (const auto& i : fileNames)
+            reply->add_filenames(i);
 
         return Status::OK;
     }
@@ -205,6 +205,8 @@ void RunServer(uint16_t port) {
     
     std::unique_ptr<Server> server(builder.BuildAndStart());
     std::cout << "Server listening on " << serverAddress << std::endl;
+
+
 
     server->Wait();
 }

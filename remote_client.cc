@@ -56,7 +56,7 @@ public:
         return false;
     }
     
-    auto ChooseFileNameToDownload() -> string 
+    auto selectFileNameToDownload() -> string 
     {   
         vector<string> fileNames;
         int num;
@@ -70,8 +70,8 @@ public:
         cout << "\n**** [List] ****\n";
         for (auto i = 0; i < fileNames.size(); i++)
             cout << "[" << i+1 << "] " << fileNames[i] << endl;
-    
-        cout << "Choose you wanna download\n: " ;
+        
+        cout << "Select you wanna download\n: " ;
         cin >> num;
 
         return fileNames[num-1];
@@ -87,8 +87,8 @@ public:
         Status status = _stub->GetFileNamesOfDataset(&context, request, &reply);
 
         if (status.ok())
-            for(auto i=0; i<reply.filenames_size(); i++)
-                result.push_back(reply.filenames(i));
+            for(const auto i : reply.filenames())
+                result.push_back(i);
         else
             result.push_back("error");
         
@@ -107,10 +107,16 @@ public:
         _reply = reply;
 
         if (status.ok())
+        {
+            _reply.set_success(true);
             return true;
+        }
         else
+        {
             return false;        
+        }
     }
+
     bool DownloadViaStream(const string& fileName)
     {
         ClientContext context;
@@ -120,7 +126,8 @@ public:
         request.set_name(fileName);
 
         std::unique_ptr<ClientReader<File> > reader(_stub->DownloadFileViaStream(&context, request));
-        while (reader->Read(&f)) {
+        while (reader->Read(&f)) 
+        {
             string buf = f.buffer();
             cout << buf.length() << endl;
         }
@@ -129,9 +136,14 @@ public:
         Status status = reader->Finish();
 
         if (status.ok())
+        {
+            _reply.set_success(true);
             return true;
+        }
         else
+        {
             return false;        
+        }
     }
 
     void printReply()
@@ -189,7 +201,7 @@ auto GetPathOfDownload() -> string
 {
     string result;
 
-    cout << "Enter path where you wanna put your file (ex: ../../download/) \n: ";
+    cout << "Enter path where you wanna save your file (ex: ../../download/) \n: ";
     cin >> result;
 
     return result;
@@ -208,12 +220,12 @@ void RunClient(int argc, char** argv)
     string userPw;
     bool permission = false;
 
-    for(int cnt=0; cnt<3 & !permission; cnt++)
+    for (int cnt=0; cnt<3 & !permission; cnt++)
     {
         tie(userId, userPw) = getLoginInfoByUser();
         permission = service.TryLoginToServer(userId, userPw);
         if (!permission) 
-            cout << "Incorrect ID or PW. Please retry\n";
+            cout << "Login failed. Please retry\n";
     }
     
     if (permission)
@@ -221,10 +233,10 @@ void RunClient(int argc, char** argv)
         bool isDownloaded;
         do
         {
-            auto fileName = service.ChooseFileNameToDownload();
+            auto fileName = service.selectFileNameToDownload();
             isDownloaded = service.Download(fileName);
             if(!isDownloaded)
-                cout << "Can't Download [" << fileName << "]. Please retry.\n";
+                cout << "Can't download [" << fileName << "]. Please retry.\n";
         } 
         while (!isDownloaded);
         
