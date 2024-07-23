@@ -15,11 +15,12 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
+using grpc::ClientReader;
 
 using remote::RemoteCommunication;
 
 using remote::RemoteRequest;
-using remote::RemoteReply;
+using remote::File;
 
 using remote::UserLoginInfo;
 using remote::LoginResult;
@@ -98,15 +99,39 @@ public:
     {
         ClientContext context;
         RemoteRequest request;
+        File reply;
 
         request.set_name(fileName);
 
-        Status status = _stub->DownloadFile(&context, request, &_reply); 
+        Status status = _stub->DownloadFile(&context, request, &reply); 
+        _reply = reply;
 
         if (status.ok())
             return true;
-        else        
-            return false;
+        else
+            return false;        
+    }
+    bool DownloadViaStream(const string& fileName)
+    {
+        ClientContext context;
+        RemoteRequest request;
+        File f;
+
+        request.set_name(fileName);
+
+        std::unique_ptr<ClientReader<File> > reader(_stub->DownloadFileViaStream(&context, request));
+        while (reader->Read(&f)) {
+            string buf = f.buffer();
+            cout << buf.length() << endl;
+        }
+        _reply = f;
+
+        Status status = reader->Finish();
+
+        if (status.ok())
+            return true;
+        else
+            return false;        
     }
 
     void printReply()
@@ -138,13 +163,13 @@ public:
         
         ofstream ofs;
         ofs.open(PathOfDownload + file_name, ios::out | ios::binary);
-        ofs.write((char *)file.data(), file.length());           
+        ofs.write(file.c_str(), file.length());           
         ofs.close();
     }
 
 private:
     unique_ptr<RemoteCommunication::Stub> _stub;
-    RemoteReply _reply;
+    File _reply;
 };
 
 auto getLoginInfoByUser() -> pair<string, string> 
@@ -175,7 +200,10 @@ void RunClient(int argc, char** argv)
     absl::ParseCommandLine(argc, argv);
     auto targetStr = absl::GetFlag(FLAGS_target);
 
-    Downloader service(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
+    grpc::ChannelArguments args;
+    args.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GB */);
+    Downloader service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
+
     string userId;
     string userPw;
     bool permission = false;

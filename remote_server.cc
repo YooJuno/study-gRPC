@@ -24,11 +24,12 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+using grpc::ServerWriter;
 
 using remote::RemoteCommunication;
 
 using remote::RemoteRequest;
-using remote::RemoteReply;
+using remote::File;
 
 using remote::UserLoginInfo;
 using remote::LoginResult;
@@ -115,26 +116,67 @@ public:
         return Status::OK;
     }
 
-    Status DownloadFile(ServerContext* context, const RemoteRequest* request, RemoteReply* reply) // 파일?
+    Status DownloadFile(ServerContext* context, const RemoteRequest* request, File* reply)
     override 
     {
         ifstream ifs;
         string nameOfTargetFile(request->name());
         string pathOfTargetFile = _pathOfDataset + request->name();
         ifs.open(pathOfTargetFile, ios::binary);
+
+        if(!ifs)
+            cout << "failed to open file\n";
+
         string buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
+        ifs.close();
+
+        cout << buffer.size() << endl;
 
         reply->set_buffer(buffer);
+        cout << reply->buffer().length()<<endl;
         reply->set_name(nameOfTargetFile);
         reply->set_size(buffer.length());
         
-        string creationTimeOfTargetFile;
         struct stat attr;
         if (stat(pathOfTargetFile.c_str(), &attr) == 0) 
-            creationTimeOfTargetFile = ctime(&attr.st_ctime);
+        {
+            string creationTimeOfTargetFile = ctime(&attr.st_ctime);
+            creationTimeOfTargetFile[creationTimeOfTargetFile.length()-1] = '\0';
+            reply->set_date(creationTimeOfTargetFile); 
+        }
+        return Status::OK;
+    }
+    
+    Status DownloadFileViaStream(ServerContext* context, const RemoteRequest* request, ServerWriter<File>* reply)
+    override 
+    {
+        ifstream ifs;
+        File chunk;
+        struct stat attr;
 
-        reply->set_date(creationTimeOfTargetFile); 
+        string nameOfTargetFile(request->name());
+        string pathOfTargetFile = _pathOfDataset + request->name();
+        ifs.open(pathOfTargetFile, ios::binary);
+
+        if(!ifs)
+            cout << "failed to open file\n";
+
+        string buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
+        ifs.close();
+
+        chunk.set_buffer(buffer);
+        chunk.set_name(nameOfTargetFile);
+        chunk.set_size(buffer.length());
         
+        if (stat(pathOfTargetFile.c_str(), &attr) == 0) 
+        {
+            string creationTimeOfTargetFile = ctime(&attr.st_ctime);
+            creationTimeOfTargetFile[creationTimeOfTargetFile.length()-1] = '\0';
+            chunk.set_date(creationTimeOfTargetFile); 
+        }
+
+        reply->Write(chunk);
+
         return Status::OK;
     }
 
@@ -152,6 +194,10 @@ void RunServer(uint16_t port) {
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
     ServerBuilder builder;
+
+    builder.SetMaxSendMessageSize(1024 * 1024 * 1024);
+    builder.SetMaxMessageSize(1024 * 1024 * 1024);
+    builder.SetMaxReceiveMessageSize(1024 * 1024 * 1024);
 
     builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
 
