@@ -236,8 +236,16 @@ void RunClient(string targetStr)
         for(auto cnt=0; cnt<3 && !isDownloaded; cnt++)
         {
             auto fileName = service.selectFileNameToDownload();
+            /*
+            [개선 사항]
+            1. 어떤 모드로 진행할 것인지 입력받아야함.
+                - protobuf message의 최대 용량을 넘어가면 stream 방식으로 하면 좋을듯.
+                - 그럼 서버에서 파일 목록을 보내올 때 크기도 같이 넘겨줘서 
+                    메세지 최대 크기를 넘어가는 파일에 대해선 stream 방식으로 하면 될 듯.
+            2. 최대 메세지 크기를 넘어가는 파일에 한 해 chunksize 입력 받아야함.
+            */
             // file = service.DownloadFile(fileName);
-            file = service.DownloadFileViaStream(fileName, 10);
+            file = service.DownloadFileViaStream(fileName, 100);
             isDownloaded = file.success();
             if(!isDownloaded)
                 cout << "Can't download [" << fileName << "]. Please retry.\n\n";
