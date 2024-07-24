@@ -16,6 +16,7 @@ message Empty {}
 message RemoteRequest
 {
     string name = 1;
+    int32 chunksize = 2; // for stream
 }
 
 message File
