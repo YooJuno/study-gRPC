@@ -90,7 +90,7 @@ public:
         return result;
     }
 
-    bool Download(const string& fileName)
+    File DownloadFile(const string& fileName)
     {
         ClientContext context;
         RemoteRequest request;
@@ -99,52 +99,61 @@ public:
         request.set_name(fileName);
 
         Status status = _stub->DownloadFile(&context, request, &reply); 
-        _reply = reply;
 
-        if (status.ok())
-        {
-            _reply.set_success(true);
-            return true;
-        }
-        else
-        {
-            return false;        
-        }
+        if (!status.ok())
+            reply.set_success(false);
+
+        return reply;
     }
 
-    bool DownloadViaStream(const string& fileName)
+    void PrintProgress(int downloadedSize, int fullSize)
+    {   
+        cout << "Downloading " ;
+        cout << "[";
+        int progressBarLength = 50;
+        for(int i=0; i<progressBarLength ; i++)
+        {
+            if (i<(int)((downloadedSize/(float)fullSize)*progressBarLength))
+                cout << "#";
+            else
+                cout << " ";
+        }
+        cout << "]\r";
+    }
+
+    File DownloadFileViaStream(const string& fileName, int chunkSize)
     {
         ClientContext context;
         RemoteRequest request;
-        File f;
-
+        File reply;
+        string buffer;
         request.set_name(fileName);
+        request.set_chunksize(chunkSize);
 
+        reply.set_buffer("");
         std::unique_ptr<ClientReader<File> > reader(_stub->DownloadFileViaStream(&context, request));
-        while (reader->Read(&f)) 
+
+        while (reader->Read(&reply)) 
         {
-            string buf = f.buffer();
-            cout << buf.length() << endl;
+            buffer += reply.buffer();
+            PrintProgress(buffer.length(), reply.size());
         }
-        _reply = f;
+        cout << endl;
+
+        reply.set_buffer(buffer);
 
         Status status = reader->Finish();
 
-        if (status.ok())
-        {
-            _reply.set_success(true);
-            return true;
-        }
-        else
-        {
-            return false;        
-        }
+        if (!status.ok())
+            reply.set_success(false);
+
+        return reply;
     }
 
-    void printReply()
+    void printReply(const File& file)
     {
-        const google::protobuf::Descriptor* descriptor = _reply.GetDescriptor();
-        const google::protobuf::Reflection* reflection = _reply.GetReflection();
+        const google::protobuf::Descriptor* descriptor = file.GetDescriptor();
+        const google::protobuf::Reflection* reflection = file.GetReflection();
 
         cout << "\n***** [File info] *****\n";
         for (auto i=1; i<descriptor->field_count(); i++) 
@@ -153,34 +162,34 @@ public:
             cout << field->name() << " : ";
 
             if (field->type() == google::protobuf::FieldDescriptor::TYPE_INT32) 
-                cout << reflection->GetInt32(_reply, field) << endl;
+                cout << reflection->GetInt32(file, field) << endl;
             else if (field->type() == google::protobuf::FieldDescriptor::TYPE_STRING) 
-                cout << reflection->GetString(_reply, field) << endl;
+                cout << reflection->GetString(file, field) << endl;
             else if (field->type() == google::protobuf::FieldDescriptor::TYPE_BOOL) 
-                cout << std::boolalpha << reflection->GetBool(_reply, field) << endl;
+                cout << std::boolalpha << reflection->GetBool(file, field) << endl;
             else 
                 cout << "Unknown" << endl;
         }
     }
 
-    void saveReplyTo(const string PathOfDownload)
+    void saveReplyTo(const string& PathOfDownload, const File file)
     {
-        string file = _reply.buffer();
-        string file_name = _reply.name();
+        string buffer = file.buffer();
+        string file_name = file.name();
         
         ofstream ofs;
         ofs.open(PathOfDownload + file_name, ios::out | ios::binary);
-        ofs.write(file.c_str(), file.length());           
+        ofs.write(buffer.c_str(), buffer.length());           
         ofs.close();
     }
 
 private:
     unique_ptr<RemoteCommunication::Stub> _stub;
-    File _reply;
 };
 
 auto getLoginInfoByUser() -> pair<string, string> 
 {   
+    cout << "**** [Login] ****\n";
     string id;
     string pw;
 
@@ -207,7 +216,6 @@ void RunClient(string targetStr)
     grpc::ChannelArguments args;
     args.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GB */);
     Downloader service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
-
     string userId;
     string userPw;
     bool permission = false;
@@ -222,23 +230,26 @@ void RunClient(string targetStr)
     
     if (permission)
     {   
-        bool isDownloaded;
-        do
+        File file;
+        bool isDownloaded=false;
+
+        for(auto cnt=0; cnt<3 && !isDownloaded; cnt++)
         {
             auto fileName = service.selectFileNameToDownload();
-            isDownloaded = service.Download(fileName);
+            // file = service.DownloadFile(fileName);
+            file = service.DownloadFileViaStream(fileName, 10);
+            isDownloaded = file.success();
             if(!isDownloaded)
                 cout << "Can't download [" << fileName << "]. Please retry.\n\n";
-        } 
-        while (!isDownloaded);
+        }
         
-        service.printReply();
+        service.printReply(file);
 
         auto pathOfDownload = GetPathOfDownload();
         if (pathOfDownload[pathOfDownload.length()-1] != '/')
             pathOfDownload += '/';
 
-        service.saveReplyTo(pathOfDownload);
+        service.saveReplyTo(pathOfDownload, file);
     }
     else
     {
