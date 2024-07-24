@@ -19,6 +19,7 @@
 
 #include <filesystem>
 #include <zip.h>
+
 #define FILE (1)
 #define Dir (2)
 
@@ -40,70 +41,80 @@ using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-void addFolderToZip(zip_t* zip, const string& folderPath, const string& zipPath) {
-    for (const auto& entry : filesystem::recursive_directory_iterator(folderPath)) {
-        if (entry.is_directory()) continue;
-
-        string filePath = entry.path().string();
-        string fileNameInZip = zipPath + entry.path().string().substr(folderPath.length() + 1);
-
-        zip_source_t* source = zip_source_file(zip, filePath.c_str(), 0, 0);
-        if (source == nullptr) {
-            cerr << "Failed to add file to zip: " << filePath << endl;
-            continue;
-        }
-
-        zip_file_add(zip, fileNameInZip.c_str(), source, ZIP_FL_OVERWRITE);
-    }
-}
-
-bool zipFolder(const string& folderPath, const string& zipFilePath)
+class Filesystem
 {
-    int errorp;
-    zip_t* zip = zip_open(zipFilePath.c_str(), ZIP_CREATE | ZIP_TRUNCATE, &errorp);
-    if (zip == nullptr) {
-        zip_error_t error;
-        zip_error_init_with_code(&error, errorp);
-        zip_error_fini(&error);
-        return false;
-    }
-    
-    addFolderToZip(zip, folderPath, "");
-    zip_close(zip);
-
-    return true;
-}
-
-auto GetPathOfDataset() -> string
-{
-    string result;
-
-    cout << "Enter dataset path (ex: ../../dataset/)\n: ";
-    cin >> result;
-
-    return result;
-}
-
-auto GetFileNamesFrom(DIR* dir) -> vector<string>
-{
-    vector<string> result;
-    struct dirent* entry;
-
-    while ((entry = readdir(dir)))
+public:
+    void addFolderToZip(zip_t* zip, const string& folderPath, const string& zipPath) 
     {
-        string name = entry->d_name;
-        if (name == "." || name == "..") continue;
-        result.push_back(name);
+        for (const auto& entry : filesystem::recursive_directory_iterator(folderPath)) 
+        {
+            if (entry.is_directory()) 
+                continue;
+
+            string filePath = entry.path().string();
+            string fileNameInZip = zipPath + entry.path().string().substr(folderPath.length() + 1);
+
+            zip_source_t* source = zip_source_file(zip, filePath.c_str(), 0, 0);
+            if (source == nullptr) 
+            {
+                cerr << "Failed to add file to zip: " << filePath << endl;
+                continue;
+            }
+
+            zip_file_add(zip, fileNameInZip.c_str(), source, ZIP_FL_OVERWRITE);
+        }
     }
-    rewinddir(dir);
 
-    return result;
-}
+    bool zipFolder(const string& folderPath, const string& zipFilePath)
+    {
+        int errorp;
+        zip_t* zip = zip_open(zipFilePath.c_str(), ZIP_CREATE | ZIP_TRUNCATE, &errorp);
+        if (zip == nullptr) 
+        {
+            zip_error_t error;
+            zip_error_init_with_code(&error, errorp);
+            zip_error_fini(&error);
+            return false;
+        }
+        
+        addFolderToZip(zip, folderPath, "");
+        zip_close(zip);
 
-bool isDirOpened(DIR* dir)
-{
-    return dir;
-}
+        return true;
+    }
+
+    auto GetPathOfDataset() -> string
+    {
+        string result;
+
+        cout << "Enter dataset path (ex: ../../dataset/)\n: ";
+        cin >> result;
+
+        return result;
+    }
+
+    auto GetFileNamesFrom(DIR* dir) -> vector<string>
+    {
+        vector<string> result;
+        struct dirent* entry;
+
+        while ((entry = readdir(dir)))
+        {
+            string name = entry->d_name;
+            if (name == "." || name == "..") 
+                continue;
+            result.push_back(name);
+        }
+        rewinddir(dir);
+
+        return result;
+    }
+
+    bool isDirOpened(DIR* dir)
+    {
+        return dir;
+    }
+};
 
 class Uploader final : public RemoteCommunication::Service 
 {
@@ -112,15 +123,15 @@ public:
     {
         do
         {
-            _datasetPath = GetPathOfDataset();
+            _datasetPath = Filesystem::GetPathOfDataset();
             if(_datasetPath[_datasetPath.length()-1] != '/')
                 _datasetPath += '/';
             _dir = opendir(_datasetPath.c_str());
 
             if (!_dir)
-                cout << "Can't open folder. Please retry.\n";
+                cout << "Can't open folder. Please retry.\n\n";
         }
-        while (!isDirOpened(_dir));
+        while (!Filesystem::isDirOpened(_dir));
     }
 
     Status LoginToServer(ServerContext* context, const UserLoginInfo* request, LoginResult* reply) 
@@ -140,7 +151,7 @@ public:
     Status GetFileNamesOfDataset(ServerContext* context, const Empty* request, FileNamesOfDataset* reply) 
     override 
     {
-        auto fileNames = GetFileNamesFrom(_dir);
+        auto fileNames = Filesystem::GetFileNamesFrom(_dir);
         
         for (const auto& i : fileNames)
             reply->add_filenames(i);
@@ -159,7 +170,7 @@ public:
         if(isTargetFolder)
         {
             targetName += ".zip";
-            bool success = zipFolder(targetPath, targetPath + targetName);
+            bool success = Filesystem::zipFolder(targetPath, targetPath + targetName);
         }
         
         ifs.open(targetPath + targetName, ios::binary);
@@ -172,8 +183,6 @@ public:
 
         if(isTargetFolder)
             filesystem::remove(targetPath);
-
-        cout << buffer.size() << endl;
 
         reply->set_buffer(buffer);
         cout << reply->buffer().length()<<endl;
@@ -233,7 +242,7 @@ private:
 
 void RunServer(uint16_t port) 
 {
-    std::string serverAddress = absl::StrFormat("0.0.0.0:%d", port);
+    string serverAddress = absl::StrFormat("0.0.0.0:%d", port);
     Uploader service;
 
     grpc::EnableDefaultHealthCheckService(true);
@@ -248,8 +257,8 @@ void RunServer(uint16_t port)
 
     builder.RegisterService(&service);
     
-    std::unique_ptr<Server> server(builder.BuildAndStart());
-    std::cout << "Server listening on " << serverAddress << std::endl;
+    unique_ptr<Server> server(builder.BuildAndStart());
+    cout << "\nServer listening on " << serverAddress << endl;
 
     server->Wait();
 }
