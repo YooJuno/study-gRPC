@@ -217,7 +217,7 @@ void RunClient(string targetStr)
         tie(userId, userPw) = getLoginInfoByUser();
         permission = service.TryLoginToServer(userId, userPw);
         if (!permission) 
-            cout << "Login failed. Please retry\n";
+            cout << "Login failed. Please retry\n\n";
     }
     
     if (permission)
@@ -228,7 +228,7 @@ void RunClient(string targetStr)
             auto fileName = service.selectFileNameToDownload();
             isDownloaded = service.Download(fileName);
             if(!isDownloaded)
-                cout << "Can't download [" << fileName << "]. Please retry.\n";
+                cout << "Can't download [" << fileName << "]. Please retry.\n\n";
         } 
         while (!isDownloaded);
         
