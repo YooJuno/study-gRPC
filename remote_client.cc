@@ -90,7 +90,7 @@ public:
         return result;
     }
 
-    File DownloadFile(const string& fileName)
+    auto DownloadFile(const string& fileName) -> File
     {
         ClientContext context;
         RemoteRequest request;
@@ -121,7 +121,7 @@ public:
         cout << "]\r";
     }
 
-    File DownloadFileViaStream(const string& fileName, int chunkSize)
+    auto DownloadFileViaStream(const string& fileName, int chunkSize) -> File
     {
         ClientContext context;
         RemoteRequest request;
