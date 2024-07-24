@@ -44,7 +44,7 @@ ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 class Filesystem
 {
 public:
-    void addFolderToZip(zip_t* zip, const string& folderPath, const string& zipPath) 
+    static void addFolderToZip(zip_t* zip, const string& folderPath, const string& zipPath) 
     {
         for (const auto& entry : filesystem::recursive_directory_iterator(folderPath)) 
         {
@@ -65,7 +65,7 @@ public:
         }
     }
 
-    bool zipFolder(const string& folderPath, const string& zipFilePath)
+    static bool zipFolder(const string& folderPath, const string& zipFilePath)
     {
         int errorp;
         zip_t* zip = zip_open(zipFilePath.c_str(), ZIP_CREATE | ZIP_TRUNCATE, &errorp);
@@ -83,17 +83,7 @@ public:
         return true;
     }
 
-    auto GetPathOfDataset() -> string
-    {
-        string result;
-
-        cout << "Enter dataset path (ex: ../../dataset/)\n: ";
-        cin >> result;
-
-        return result;
-    }
-
-    auto GetFileNamesFrom(DIR* dir) -> vector<string>
+    static auto GetFileNamesFrom(DIR* dir) -> vector<string>
     {
         vector<string> result;
         struct dirent* entry;
@@ -110,9 +100,24 @@ public:
         return result;
     }
 
-    bool isDirOpened(DIR* dir)
+    static bool isDirOpened(DIR* dir)
     {
         return dir;
+    }
+
+    static auto GetPathOfDataset() -> string
+    {
+        string result;
+
+        cout << "Enter dataset path (ex: ../../dataset/)\n: ";
+        cin >> result;
+
+        return result;
+    }
+
+    static bool isDir(const string& path)
+    {
+        return filesystem::is_directory((filesystem::path)path);
     }
 };
 
@@ -129,7 +134,7 @@ public:
             _dir = opendir(_datasetPath.c_str());
 
             if (!_dir)
-                cout << "Can't open folder. Please retry.\n\n";
+                cout << "Can't open directory. Please retry.\n\n";
         }
         while (!Filesystem::isDirOpened(_dir));
     }
@@ -164,39 +169,60 @@ public:
     {
         ifstream ifs;
         string targetName(request->name());
-        auto targetPath = _datasetPath + targetName;
 
-        bool isTargetFolder = filesystem::is_directory((filesystem::path)targetPath);
-        if(isTargetFolder)
+        bool isTargetDir = Filesystem::isDir(_datasetPath + targetName);
+        if (isTargetDir)
         {
+
+            bool success = Filesystem::zipFolder(_datasetPath + targetName, _datasetPath + targetName + ".zip");
+            
             targetName += ".zip";
-            bool success = Filesystem::zipFolder(targetPath, targetPath + targetName);
+            ifs.open(_datasetPath + targetName, ios::binary);
+
+            if(!ifs)
+                cout << "failed to open file\n";
+
+            string buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
+
+            reply->set_buffer(buffer);
+            reply->set_name(targetName);
+            reply->set_size(buffer.length());
+
+            struct stat attr;
+            if (stat((_datasetPath + targetName).c_str(), &attr) == 0) 
+            {
+                string creationTimeOfTargetFile = ctime(&attr.st_ctime);
+                creationTimeOfTargetFile[creationTimeOfTargetFile.length()-1] = '\0';
+                reply->set_date(creationTimeOfTargetFile); 
+            }
+
+            filesystem::remove(_datasetPath + targetName);
+        }
+        else
+        {
+            ifs.open(_datasetPath + targetName, ios::binary);
+
+            if(!ifs)
+                cout << "failed to open file\n";
+
+            string buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
+
+            reply->set_buffer(buffer);
+            cout << reply->buffer().length()<<endl;
+            reply->set_name(targetName);
+            reply->set_size(buffer.length());
+            
+            struct stat attr;
+            if (stat((_datasetPath + targetName).c_str(), &attr) == 0) 
+            {
+                string creationTimeOfTargetFile = ctime(&attr.st_ctime);
+                creationTimeOfTargetFile[creationTimeOfTargetFile.length()-1] = '\0';
+                reply->set_date(creationTimeOfTargetFile); 
+            }
         }
         
-        ifs.open(targetPath + targetName, ios::binary);
-
-        if(!ifs)
-            cout << "failed to open file\n";
-
-        string buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
         ifs.close();
 
-        if(isTargetFolder)
-            filesystem::remove(targetPath);
-
-        reply->set_buffer(buffer);
-        cout << reply->buffer().length()<<endl;
-        reply->set_name(targetName);
-        reply->set_size(buffer.length());
-        
-        struct stat attr;
-        if (stat(targetPath.c_str(), &attr) == 0) 
-        {
-            string creationTimeOfTargetFile = ctime(&attr.st_ctime);
-            creationTimeOfTargetFile[creationTimeOfTargetFile.length()-1] = '\0';
-            reply->set_date(creationTimeOfTargetFile); 
-        }
-        
         return Status::OK;
     }
     
