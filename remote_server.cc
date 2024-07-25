@@ -205,7 +205,7 @@ public:
         if (stat((_datasetPath + targetName).c_str(), &attr) == 0) 
         {
             string creationTimeOfTargetFile = ctime(&attr.st_ctime);
-            creationTimeOfTargetFile[creationTimeOfTargetFile.length()-1] = '\0';
+            *(creationTimeOfTargetFile.end() - 1) = '\0';
             reply->set_date(creationTimeOfTargetFile); 
         }
         
