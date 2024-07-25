@@ -19,10 +19,14 @@ using grpc::ClientReader;
 using remote::RemoteCommunication;
 using remote::RemoteRequest;
 using remote::File;
+using remote::Header;
+using remote::Data;
 using remote::UserLoginInfo;
 using remote::LoginResult;
 using remote::FileNamesOfDataset;
 using remote::Empty;
+
+using remote::Data;
 
 using namespace std;
 
@@ -54,7 +58,8 @@ public:
     auto selectFileNameToDownload() -> string 
     {   
         vector<string> fileNames;
-        int num;
+        int inputNum;
+        int i;
         
         do
         {
@@ -63,15 +68,14 @@ public:
         while (fileNames[0] == "error");
         
         cout << "\n**** [List] ****\n";
-        int i;
         for (i = 0; i < fileNames.size(); i++)
             cout << "[" << i+1 << "] " << fileNames[i] << endl;
         fileNames.push_back("quit");
         cout << "[" << i+1 << "] nothing to download(quit)" << endl;
         cout << "Select you wanna download\n: " ;
-        cin >> num;
+        cin >> inputNum;
 
-        return fileNames[num-1];
+        return fileNames[inputNum-1];
     }
     
     auto GetFileNamesOfDataset() -> vector<string> 
@@ -92,22 +96,6 @@ public:
         return result;
     }
 
-    auto DownloadFile(const string& fileName) -> File
-    {
-        ClientContext context;
-        RemoteRequest request;
-        File reply;
-
-        request.set_name(fileName);
-
-        Status status = _stub->DownloadFile(&context, request, &reply); 
-
-        if (!status.ok())
-            reply.set_success(false);
-
-        return reply;
-    }
-
     void PrintProgress(int downloadedSize, int fullSize)
     {   
         cout << "Downloading " ;
@@ -121,38 +109,58 @@ public:
                 cout << " ";
         }
         cout << "]\r";
+
+        if (downloadedSize/fullSize == 1) cout << "\n";
     }
 
-    auto DownloadFileViaStream(const string& fileName, int chunkSize) -> File
+    auto DownloadFile(const string& fileName, int chunkSize) -> File
     {
-        ClientContext context;
+        ClientContext contextForHeader;
+        ClientContext contextForData;
         RemoteRequest request;
         File reply;
-        string buffer;
+        Header header;
+        Data data;
+        string queue("");
+
         request.set_name(fileName);
         request.set_chunksize(chunkSize);
 
-        reply.set_buffer("");
-        std::unique_ptr<ClientReader<File> > reader(_stub->DownloadFileViaStream(&context, request));
-
-        while (reader->Read(&reply)) 
-        {
-            buffer += reply.buffer();
-            PrintProgress(buffer.length(), reply.size());
-        }
-        cout << endl;
-
-        reply.set_buffer(buffer);
-
-        Status status = reader->Finish();
+        Status status = _stub->DownloadHeader(&contextForHeader, request, &header); 
 
         if (!status.ok())
+        {
             reply.set_success(false);
+            return reply;
+        }
+        printHeader(header);
 
+        std::unique_ptr<ClientReader<Data> > reader(_stub->DownloadData(&contextForData, request));
+
+        while (reader->Read(&data)) 
+        {
+            queue += data.buffer();
+            PrintProgress(queue.length(), header.size());
+        }
+        if(queue.length() != header.size())
+        {
+            reply.set_success(false);
+            return reply;
+        }
+
+        status = reader->Finish();
+
+        if (!status.ok())
+        {
+            reply.set_success(false);
+            return reply;
+        }
+
+        reply.set_success(true);
         return reply;
     }
 
-    void printReply(const File& file)
+    void printHeader(const Header& file)
     {
         const google::protobuf::Descriptor* descriptor = file.GetDescriptor();
         const google::protobuf::Reflection* reflection = file.GetReflection();
@@ -176,8 +184,8 @@ public:
 
     void saveReplyTo(const string& PathOfDownload, const File file)
     {
-        string buffer = file.buffer();
-        string file_name = file.name();
+        string buffer = file.data().buffer();
+        string file_name = file.header().name();
         
         ofstream ofs;
         ofs.open(PathOfDownload + file_name, ios::out | ios::binary);
@@ -216,8 +224,7 @@ auto GetPathOfDownload() -> string
 void RunClient(string targetStr)
 {
     grpc::ChannelArguments args;
-    args.SetMaxReceiveMessageSize(4 * 1024 * 1024 /* == 1GB */);
-    args.SetMaxSendMessageSize(4 * 1024 * 1024 /* == 1GB */);
+    args.SetMaxSendMessageSize(4 * 1024 * 1024 /* == 4MB */);
     args.SetLoadBalancingPolicyName("round_robin");
 
     Downloader service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
@@ -234,43 +241,33 @@ void RunClient(string targetStr)
     }
     
     if (permission)
-    {   
-        while(true)
+    {
+        File file;
+        bool isDownloaded = false;
+
+        for(auto cnt=0; cnt<3 && !isDownloaded; cnt++)
         {
-            File file;
-            bool isDownloaded=false;
-
-            for(auto cnt=0; cnt<3 && !isDownloaded; cnt++)
+            auto fileName = service.selectFileNameToDownload();
+            if (fileName == "quit")
             {
-                auto fileName = service.selectFileNameToDownload();
-                if (fileName == "quit")
-                {
-                    cout << "Good bye\n";
-                    return ;
-                }
-                /*
-                [개선 사항]
-                1. 어떤 모드로 진행할 것인지 입력받아야함.
-                    - protobuf message의 최대 용량을 넘어가면 stream 방식으로 하면 좋을듯.
-                    - 그럼 서버에서 파일 목록을 보내올 때 크기도 같이 넘겨줘서 
-                        메세지 최대 크기를 넘어가는 파일에 대해선 stream 방식으로 하면 될 듯.
-                2. 최대 메세지 크기를 넘어가는 파일에 한 해 chunksize 입력 받아야함.
-                */
-                // file = service.DownloadFile(fileName);
-                file = service.DownloadFileViaStream(fileName, 3 * 1024 * 1024); // Default Max size = 4MB
-                isDownloaded = file.success();
-                if(!isDownloaded)
-                    cout << "Can't download [" << fileName << "]. Please retry.\n\n";
+                cout << "Good bye\n";
+                return ;
             }
-            
-            service.printReply(file);
-
-            auto pathOfDownload = GetPathOfDownload();
-            if (pathOfDownload[pathOfDownload.length()-1] != '/')
-                pathOfDownload += '/';
-
-            service.saveReplyTo(pathOfDownload, file);
+    
+            file = service.DownloadFile(fileName, 1024 /* 1 KiB/chunk */);
+        
+            isDownloaded = file.success();
+            if(!isDownloaded)
+                cout << "Can't download [" << fileName << "]. Please retry.\n\n";
         }
+        
+        service.printHeader(file.header());
+
+        auto pathOfDownload = GetPathOfDownload();
+        if (pathOfDownload[pathOfDownload.length()-1] != '/')
+            pathOfDownload += '/';
+
+        service.saveReplyTo(pathOfDownload, file);
     }
     else
     {

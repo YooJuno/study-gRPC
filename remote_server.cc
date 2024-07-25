@@ -29,10 +29,14 @@ using grpc::ServerWriter;
 using remote::RemoteCommunication;
 using remote::RemoteRequest;
 using remote::File;
+using remote::Header;
+using remote::Data;
 using remote::UserLoginInfo;
 using remote::LoginResult;
 using remote::FileNamesOfDataset;
 using remote::Empty;
+
+using remote::Data;
 
 using namespace std;
 
@@ -163,11 +167,12 @@ public:
         return Status::OK;
     }
 
-    Status DownloadFile(ServerContext* context, const RemoteRequest* request, File* reply)
+    Status DownloadHeader(ServerContext* context, const RemoteRequest* request, Header* reply)
     override 
     {
         ifstream ifs;
         string targetName(request->name());
+        struct stat attr;
 
         bool isTargetDir = Filesystem::isDir(_datasetPath + targetName);
         if (isTargetDir)
@@ -179,7 +184,6 @@ public:
                 reply->set_success(false);
                 return Status::OK;
             }
-
             targetName += ".zip";
         }
         
@@ -191,14 +195,13 @@ public:
             reply->set_success(false);
             return Status::OK;
         }
+        _buffer.assign((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
+    
+        ifs.close();
 
-        string buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
-
-        reply->set_buffer(buffer);
         reply->set_name(targetName);
-        reply->set_size(buffer.length());
+        reply->set_size(_buffer.length());
 
-        struct stat attr;
         if (stat((_datasetPath + targetName).c_str(), &attr) == 0) 
         {
             string creationTimeOfTargetFile = ctime(&attr.st_ctime);
@@ -209,71 +212,24 @@ public:
         if (isTargetDir)
             filesystem::remove(_datasetPath + targetName);
 
-        ifs.close();
-
-        reply->set_success(true);
         return Status::OK;
     }
     
-    Status DownloadFileViaStream(ServerContext* context, const RemoteRequest* request, ServerWriter<File>* reply)
+    Status DownloadData(ServerContext* context, const RemoteRequest* request, ServerWriter<Data>* reply)
     override 
     {
-        ifstream ifs;
-        File chunk;
-        struct stat attr;
-        string targetName(request->name());
-
-        bool isTargetDir = Filesystem::isDir(_datasetPath + targetName);
-        if (isTargetDir)
-        {
-            bool zipsuccess = Filesystem::zipFolder(_datasetPath + targetName, _datasetPath + targetName + ".zip");
-
-            if(!zipsuccess)
-            {
-                chunk.set_success(false);
-                return Status::OK;
-            }
-
-            targetName += ".zip";
-        }
-        
-        ifs.open(_datasetPath + targetName, ios::binary);
-
-        if(!ifs)
-        {
-            cout << "failed to open file\n";
-            chunk.set_success(false);
-            reply->Write(chunk);
-            return Status::OK;
-        }
-
-        string buffer((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
-        ifs.close();
-
-        chunk.set_name(targetName);
-        chunk.set_size(buffer.length());
-        chunk.set_success(true);
-        
-        if (stat((_datasetPath + targetName).c_str(), &attr) == 0) 
-        {
-            string creationTimeOfTargetFile = ctime(&attr.st_ctime);
-            creationTimeOfTargetFile[creationTimeOfTargetFile.length()-1] = '\0';
-            chunk.set_date(creationTimeOfTargetFile); 
-        }
-        
-        if (isTargetDir)
-            filesystem::remove(_datasetPath + targetName);
+        Data chunk;
 
         int iter;
-        for (iter=0; iter < buffer.length() - request->chunksize(); iter += request->chunksize())
+        for (iter=0; iter < _buffer.length() - request->chunksize(); iter += request->chunksize())
         {
-            chunk.set_buffer(buffer.substr(iter, request->chunksize()));
+            chunk.set_buffer(_buffer.substr(iter, request->chunksize()));
             reply->Write(chunk);
         }
 
-        if (iter <  buffer.length())
+        if (iter <  _buffer.length())
         {
-            chunk.set_buffer(buffer.substr(iter, buffer.length() - iter));
+            chunk.set_buffer(_buffer.substr(iter, _buffer.length() - iter));
             reply->Write(chunk);
         }
 
@@ -285,6 +241,7 @@ private:
     string _userPw;
     string _datasetPath;
     DIR* _dir;
+    string _buffer;
 };
 
 void RunServer(uint16_t port) 
@@ -296,9 +253,9 @@ void RunServer(uint16_t port)
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
     ServerBuilder builder;
     
-    // builder.SetMaxSendMessageSize(4 * 1024 * 1024);
-    // builder.SetMaxMessageSize(4 * 1024 * 1024);
-    // builder.SetMaxReceiveMessageSize(4 * 1024 * 1024);
+    builder.SetMaxSendMessageSize(4 * 1024 * 1024 /* == 4MB */);
+    builder.SetMaxMessageSize(4 * 1024 * 1024 /* == 4MB */);
+    builder.SetMaxReceiveMessageSize(4 * 1024 * 1024 /* == 4MB */);
 
     builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
 
