@@ -63,9 +63,11 @@ public:
         while (fileNames[0] == "error");
         
         cout << "\n**** [List] ****\n";
-        for (auto i = 0; i < fileNames.size(); i++)
+        int i;
+        for (i = 0; i < fileNames.size(); i++)
             cout << "[" << i+1 << "] " << fileNames[i] << endl;
-        
+        fileNames.push_back("quit");
+        cout << "[" << i+1 << "] nothing to download(quit)" << endl;
         cout << "Select you wanna download\n: " ;
         cin >> num;
 
@@ -110,7 +112,7 @@ public:
     {   
         cout << "Downloading " ;
         cout << "[";
-        int progressBarLength = 50;
+        int progressBarLength = 70;
         for(int i=0; i<progressBarLength ; i++)
         {
             if (i<(int)((downloadedSize/(float)fullSize)*progressBarLength))
@@ -214,7 +216,10 @@ auto GetPathOfDownload() -> string
 void RunClient(string targetStr)
 {
     grpc::ChannelArguments args;
-    args.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GB */);
+    args.SetMaxReceiveMessageSize(4 * 1024 * 1024 /* == 1GB */);
+    args.SetMaxSendMessageSize(4 * 1024 * 1024 /* == 1GB */);
+    args.SetLoadBalancingPolicyName("round_robin");
+
     Downloader service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
     string userId;
     string userPw;
@@ -230,34 +235,42 @@ void RunClient(string targetStr)
     
     if (permission)
     {   
-        File file;
-        bool isDownloaded=false;
-
-        for(auto cnt=0; cnt<3 && !isDownloaded; cnt++)
+        while(true)
         {
-            auto fileName = service.selectFileNameToDownload();
-            /*
-            [개선 사항]
-            1. 어떤 모드로 진행할 것인지 입력받아야함.
-                - protobuf message의 최대 용량을 넘어가면 stream 방식으로 하면 좋을듯.
-                - 그럼 서버에서 파일 목록을 보내올 때 크기도 같이 넘겨줘서 
-                    메세지 최대 크기를 넘어가는 파일에 대해선 stream 방식으로 하면 될 듯.
-            2. 최대 메세지 크기를 넘어가는 파일에 한 해 chunksize 입력 받아야함.
-            */
-            // file = service.DownloadFile(fileName);
-            file = service.DownloadFileViaStream(fileName, 100);
-            isDownloaded = file.success();
-            if(!isDownloaded)
-                cout << "Can't download [" << fileName << "]. Please retry.\n\n";
+            File file;
+            bool isDownloaded=false;
+
+            for(auto cnt=0; cnt<3 && !isDownloaded; cnt++)
+            {
+                auto fileName = service.selectFileNameToDownload();
+                if (fileName == "quit")
+                {
+                    cout << "Good bye\n";
+                    return ;
+                }
+                /*
+                [개선 사항]
+                1. 어떤 모드로 진행할 것인지 입력받아야함.
+                    - protobuf message의 최대 용량을 넘어가면 stream 방식으로 하면 좋을듯.
+                    - 그럼 서버에서 파일 목록을 보내올 때 크기도 같이 넘겨줘서 
+                        메세지 최대 크기를 넘어가는 파일에 대해선 stream 방식으로 하면 될 듯.
+                2. 최대 메세지 크기를 넘어가는 파일에 한 해 chunksize 입력 받아야함.
+                */
+                // file = service.DownloadFile(fileName);
+                file = service.DownloadFileViaStream(fileName, 3 * 1024 * 1024); // Default Max size = 4MB
+                isDownloaded = file.success();
+                if(!isDownloaded)
+                    cout << "Can't download [" << fileName << "]. Please retry.\n\n";
+            }
+            
+            service.printReply(file);
+
+            auto pathOfDownload = GetPathOfDownload();
+            if (pathOfDownload[pathOfDownload.length()-1] != '/')
+                pathOfDownload += '/';
+
+            service.saveReplyTo(pathOfDownload, file);
         }
-        
-        service.printReply(file);
-
-        auto pathOfDownload = GetPathOfDownload();
-        if (pathOfDownload[pathOfDownload.length()-1] != '/')
-            pathOfDownload += '/';
-
-        service.saveReplyTo(pathOfDownload, file);
     }
     else
     {

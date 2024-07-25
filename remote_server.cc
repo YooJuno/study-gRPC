@@ -295,10 +295,10 @@ void RunServer(uint16_t port)
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
     ServerBuilder builder;
-
-    builder.SetMaxSendMessageSize(1024 * 1024 * 1024);
-    builder.SetMaxMessageSize(1024 * 1024 * 1024);
-    builder.SetMaxReceiveMessageSize(1024 * 1024 * 1024);
+    
+    // builder.SetMaxSendMessageSize(4 * 1024 * 1024);
+    // builder.SetMaxMessageSize(4 * 1024 * 1024);
+    // builder.SetMaxReceiveMessageSize(4 * 1024 * 1024);
 
     builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
 
