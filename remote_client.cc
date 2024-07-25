@@ -239,7 +239,7 @@ void RunClient(string targetStr)
         if (!permission) 
             cout << "Login failed. Please retry\n\n";
     }
-    
+
     if (permission)
     {
         File file;
@@ -253,9 +253,9 @@ void RunClient(string targetStr)
                 cout << "Good bye\n";
                 return ;
             }
-    
+
             file = service.DownloadFile(fileName, 1024 /* 1 KiB/chunk */);
-        
+
             isDownloaded = file.success();
             if(!isDownloaded)
                 cout << "Can't download [" << fileName << "]. Please retry.\n\n";
