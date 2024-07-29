@@ -37,6 +37,22 @@ using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
+
+class IO
+{
+public:
+    static auto GetDatasetPath() -> string
+    {
+        string result;
+
+        cout << "Enter dataset path (ex: ../../dataset/)\n: ";
+        cin >> result;
+
+        return result;
+    }
+};
+
+
 class DirTools
 {
 public:
@@ -120,19 +136,27 @@ public:
         }
         return NULL;
     }
-};
 
-class IO
-{
-public:
-    static auto GetDatasetPath() -> string
-    {
-        string result;
+    static auto OpenDir() -> pair<DIR*, string>
+    {   
+        string datasetPath;
+        DIR* dir;
 
-        cout << "Enter dataset path (ex: ../../dataset/)\n: ";
-        cin >> result;
+        do
+        {
+            datasetPath = IO::GetDatasetPath();
 
-        return result;
+            if (datasetPath[datasetPath.length()-1] != '/')
+                datasetPath += '/';
+
+            dir = opendir(datasetPath.c_str());
+
+            if (!dir)
+                cout << "Can't open directory. Please retry.\n\n";\
+        }
+        while (!DirTools::IsDirOpened(dir));
+
+        return make_pair(dir, datasetPath);
     }
 };
 
@@ -143,22 +167,9 @@ public:
     // : 생성자에서 실제 일을 하지 않는다.
     // : 실제 일을 하기 위한 최소한의 리소스 준비
     // (I/O에 대해서는 콜백을 처리하길 권장하심)
-    Uploader()
-    {
-        do
-        {
-            _datasetPath = IO::GetDatasetPath();
-
-            if(_datasetPath[_datasetPath.length()-1] != '/')
-                _datasetPath += '/';
-
-            _dir = opendir(_datasetPath.c_str());
-
-            if (!_dir)
-                cout << "Can't open directory. Please retry.\n\n";\
-        }
-        while (!DirTools::IsDirOpened(_dir));
-    }
+    Uploader(DIR* dir, const string& datasetPath)
+    : _dir(dir), _datasetPath(datasetPath)
+    {}
 
     Status LoginToServer(ServerContext* context, const UserLoginInfo* request, LoginResult* reply) override
     {
@@ -249,7 +260,10 @@ void RunServer(uint16_t port)
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
 
-    Uploader service;
+    DIR* dir;
+    string datasetPath;
+    tie(dir, datasetPath) = DirTools::OpenDir();
+    Uploader service(dir, datasetPath);
 
     ServerBuilder builder;
 
