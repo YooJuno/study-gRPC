@@ -163,10 +163,6 @@ public:
 class Uploader final : public RemoteCommunication::Service 
 {
 public:
-    // TODO
-    // : 생성자에서 실제 일을 하지 않는다.
-    // : 실제 일을 하기 위한 최소한의 리소스 준비
-    // (I/O에 대해서는 콜백을 처리하길 권장하심)
     Uploader(DIR* dir, const string& datasetPath)
     : _dir(dir), _datasetPath(datasetPath)
     {}
