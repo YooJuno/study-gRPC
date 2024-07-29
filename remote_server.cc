@@ -107,6 +107,15 @@ public:
         return dir;
     }
 
+    static bool IsDir(const string& path)
+    {
+        return filesystem::is_directory((filesystem::path)path);
+    }
+};
+
+class IO
+{
+public:
     static auto GetDatasetPath() -> string
     {
         string result;
@@ -116,11 +125,6 @@ public:
 
         return result;
     }
-
-    static bool IsDir(const string& path)
-    {
-        return filesystem::is_directory((filesystem::path)path);
-    }
 };
 
 class Uploader final : public RemoteCommunication::Service 
@@ -129,12 +133,12 @@ public:
     // TODO
     // : 생성자에서 실제 일을 하지 않는다.
     // : 실제 일을 하기 위한 최소한의 리소스 준비
-    // IO에 대해서는 콜백을 처리하길 권장하심
+    // (I/O에 대해서는 콜백을 처리하길 권장하심)
     Uploader()
     {
         do
         {
-            _datasetPath = DirTools::GetDatasetPath();
+            _datasetPath = IO::GetDatasetPath();
 
             if (_datasetPath[_datasetPath.length()-1] != '/')
                 _datasetPath += '/';
@@ -186,6 +190,7 @@ public:
             if (!zipsuccess)
             {
                 reply->set_success(false);
+
                 return Status::OK;
             }
             targetName += ".zip";
@@ -197,6 +202,7 @@ public:
         {
             cout << "failed to open file\n";
             reply->set_success(false);
+            
             return Status::OK;
         }
         _buffer.assign((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
@@ -248,6 +254,12 @@ private:
     string _buffer;
 };
 
+////////////////////////////////////////////
+//                 RENARK                 //
+////////////////////////////////////////////
+// void Runserver(uint16_t port) is       //
+// reference code from grpc/example/cpp   //
+////////////////////////////////////////////
 void RunServer(uint16_t port) 
 {
     string serverAddress = absl::StrFormat("0.0.0.0:%d", port);
