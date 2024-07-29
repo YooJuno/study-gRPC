@@ -35,7 +35,6 @@ using remote::UserLoginInfo;
 using remote::LoginResult;
 using remote::FileNamesOfDataset;
 using remote::Empty;
-
 using remote::Data;
 
 using namespace std;
@@ -130,6 +129,7 @@ public:
     // TODO
     // : 생성자에서 실제 일을 하지 않는다.
     // : 실제 일을 하기 위한 최소한의 리소스 준비
+    // IO에 대해서는 콜백을 처리하길 권장하심
     Uploader()
     {
         do

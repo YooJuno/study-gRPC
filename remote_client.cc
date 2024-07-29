@@ -54,8 +54,26 @@ public:
                 
         return false;
     }
+
+    auto GetFileNamesOfDataset() -> vector<string> 
+    {   
+        vector<string> result;
+        ClientContext context;
+        Empty request;
+        FileNamesOfDataset reply;
+
+        Status status = _stub->GetFileNamesOfDataset(&context, request, &reply);
+
+        if (status.ok())
+            for(const auto& i : reply.filenames())
+                result.push_back(i);
+        else
+            result.push_back("error");
+        
+        return result;
+    }
     
-    auto selectFileNameToDownload() -> string 
+    auto SelectFileNameToDownload() -> string 
     {   
         vector<string> fileNames;
         int inputNum;
@@ -76,41 +94,6 @@ public:
         cin >> inputNum;
 
         return fileNames[inputNum-1];
-    }
-    
-    auto GetFileNamesOfDataset() -> vector<string> 
-    {   
-        vector<string> result;
-        ClientContext context;
-        Empty request;
-        FileNamesOfDataset reply;
-
-        Status status = _stub->GetFileNamesOfDataset(&context, request, &reply);
-
-        if (status.ok())
-            for(const auto& i : reply.filenames())
-                result.push_back(i);
-        else
-            result.push_back("error");
-        
-        return result;
-    }
-
-    void PrintProgress(int downloadedSize, int fullSize)
-    {   
-        cout << "Downloading " ;
-        cout << "[";
-        int progressBarLength = 40;
-        for(int i=0; i<progressBarLength ; i++)
-        {
-            if (i<(int)((downloadedSize/(float)fullSize)*progressBarLength))
-                cout << "#";
-            else
-                cout << " ";
-        }
-        cout << "]\r";
-
-        if (downloadedSize/fullSize == 1) cout << "\n";
     }
 
     auto DownloadFile(const string& fileName, int chunkSize) -> File
@@ -133,7 +116,6 @@ public:
             reply.set_success(false);
             return reply;
         }
-        printHeader(header);
 
         std::unique_ptr<ClientReader<Data> > reader(_stub->DownloadData(&contextForData, request));
 
@@ -160,7 +142,66 @@ public:
         return reply;
     }
 
-    void printHeader(const Header& file)
+    void PrintProgress(int downloadedSize, int fullSize)
+    {   
+        cout << "Downloading " ;
+        cout << "[";
+        int progressBarLength = 40;
+        for(int i=0; i<progressBarLength ; i++)
+        {
+            if (i<(int)((downloadedSize/(float)fullSize)*progressBarLength))
+                cout << "#";
+            else
+                cout << " ";
+        }
+        cout << "]\r";
+
+        if (downloadedSize/fullSize == 1) cout << "\n";
+    }
+
+    void SaveReplyTo(const string& PathOfDownload, const File file)
+    {
+        string buffer = file.data().buffer();
+        string file_name = file.header().name();
+        
+        ofstream ofs;
+        ofs.open(PathOfDownload + file_name, ios::out | ios::binary);
+        ofs.write(buffer.c_str(), buffer.length());           
+        ofs.close();
+    }
+
+private:
+    unique_ptr<RemoteCommunication::Stub> _stub;
+};
+
+class IO
+{
+public:
+    static auto GetLoginInfoByUser() -> pair<string, string> 
+    {   
+        cout << "**** [Login] ****\n";
+        string id;
+        string pw;
+
+        cout << "ID : ";
+        cin >> id;
+        cout << "PW : ";
+        cin >> pw;
+
+        return make_pair(id, pw);
+    }
+
+    static auto GetPathOfDownload() -> string
+    {
+        string result;
+
+        cout << "Enter path where you wanna save your file (ex: ../../download/) \n: ";
+        cin >> result;
+
+        return result;
+    }
+
+    static void PrintHeader(const Header& file)
     {
         const google::protobuf::Descriptor* descriptor = file.GetDescriptor();
         const google::protobuf::Reflection* reflection = file.GetReflection();
@@ -181,45 +222,7 @@ public:
                 cout << "Unknown" << endl;
         }
     }
-
-    void saveReplyTo(const string& PathOfDownload, const File file)
-    {
-        string buffer = file.data().buffer();
-        string file_name = file.header().name();
-        
-        ofstream ofs;
-        ofs.open(PathOfDownload + file_name, ios::out | ios::binary);
-        ofs.write(buffer.c_str(), buffer.length());           
-        ofs.close();
-    }
-
-private:
-    unique_ptr<RemoteCommunication::Stub> _stub;
 };
-
-auto getLoginInfoByUser() -> pair<string, string> 
-{   
-    cout << "**** [Login] ****\n";
-    string id;
-    string pw;
-
-    cout << "ID : ";
-    cin >> id;
-    cout << "PW : ";
-    cin >> pw;
-
-    return make_pair(id, pw);
-}
-
-auto GetPathOfDownload() -> string
-{
-    string result;
-
-    cout << "Enter path where you wanna save your file (ex: ../../download/) \n: ";
-    cin >> result;
-
-    return result;
-}
 
 void RunClient(string targetStr)
 {
@@ -234,7 +237,7 @@ void RunClient(string targetStr)
 
     for (int cnt=0; cnt<3 & !permission; cnt++)
     {
-        tie(userId, userPw) = getLoginInfoByUser();
+        tie(userId, userPw) = IO::GetLoginInfoByUser();
         permission = service.TryLoginToServer(userId, userPw);
         if (!permission) 
             cout << "Login failed. Please retry\n\n";
@@ -247,7 +250,7 @@ void RunClient(string targetStr)
 
         for(auto cnt=0; cnt<3 && !isDownloaded; cnt++)
         {
-            auto fileName = service.selectFileNameToDownload();
+            auto fileName = service.SelectFileNameToDownload();
             if (fileName == "quit")
             {
                 cout << "Good bye\n";
@@ -261,13 +264,13 @@ void RunClient(string targetStr)
                 cout << "Can't download [" << fileName << "]. Please retry.\n\n";
         }
         
-        service.printHeader(file.header());
+        IO::PrintHeader(file.header());
 
-        auto pathOfDownload = GetPathOfDownload();
+        auto pathOfDownload = IO::GetPathOfDownload();
         if (pathOfDownload[pathOfDownload.length()-1] != '/')
             pathOfDownload += '/';
 
-        service.saveReplyTo(pathOfDownload, file);
+        service.SaveReplyTo(pathOfDownload, file);
     }
     else
     {
