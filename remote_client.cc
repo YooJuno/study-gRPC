@@ -14,7 +14,6 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using grpc::ClientReader;
 
 using remote::RemoteCommunication;
 using remote::RemoteRequest;
@@ -145,47 +144,16 @@ public:
         return fileNames[inputNum-1];
     }
 
-    auto DownloadFile(const string& fileName, int chunkSize) -> File
+    auto DownloadFile(const string& fileName) -> File
     {
-        ClientContext contextForHeader;
-        ClientContext contextForData;
+        ClientContext context;
         RemoteRequest request;
         File reply;
-        Header header;
-        Data data;
         string queue("");
 
         request.set_name(fileName);
-        request.set_chunksize(chunkSize);
 
-        Status status = _stub->DownloadHeader(&contextForHeader, request, &header); 
-
-        if (!status.ok())
-        {
-            reply.set_success(false);
-            return reply;
-        }
-
-        if(header.name() != "" && header.size() != 0 && header.date() != "")
-            header.set_success(true);
-
-        reply.mutable_header()->CopyFrom(header);\
-
-        std::unique_ptr<ClientReader<Data> > reader(_stub->DownloadData(&contextForData, request));
-
-        while (reader->Read(&data)) 
-        {
-            queue += data.buffer();
-            PrintProgress(queue.length(), header.size());
-        }
-
-        if(queue.length() != header.size())
-        {
-            reply.set_success(false);
-            return reply;
-        }
-
-        status = reader->Finish();
+        Status status = _stub->DownloadFile(&context, request, &reply); 
 
         if (!status.ok())
         {
@@ -193,8 +161,13 @@ public:
             return reply;
         }
 
-        reply.mutable_data()->set_buffer(queue);
-        reply.set_success(true);
+        if(reply.header().name() != "" && reply.header().size() != 0 && reply.header().date() != "")
+            reply.mutable_header()->set_success(true);
+
+        if(reply.data().buffer() != "")
+            reply.mutable_data()->set_success(true);
+
+        reply.set_success(reply.header().success() && reply.data().success());
 
         return reply;
     }
@@ -234,7 +207,7 @@ private:
 void RunClient(string targetStr)
 {
     grpc::ChannelArguments args;
-    args.SetMaxSendMessageSize(4 * 1024 * 1024 /* == 4MB */);
+    args.SetMaxSendMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
     args.SetLoadBalancingPolicyName("round_robin");
 
     Downloader service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
@@ -264,7 +237,7 @@ void RunClient(string targetStr)
                 return ;
             }
 
-            file = service.DownloadFile(fileName, 1024 /* 1 KiB/chunk */);
+            file = service.DownloadFile(fileName);
 
             isDownloaded = file.success();
             if(!isDownloaded)
