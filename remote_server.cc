@@ -84,6 +84,7 @@ public:
             zip_error_t error;
             zip_error_init_with_code(&error, errorp);
             zip_error_fini(&error);
+
             return false;
         }
         
@@ -132,6 +133,7 @@ public:
             *(creationTimeOfFile.end() - 1) = '\0';
             return creationTimeOfFile;
         }
+        
         return NULL;
     }
 
