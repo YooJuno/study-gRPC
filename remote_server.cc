@@ -37,7 +37,6 @@ using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-
 class IO
 {
 public:
@@ -51,7 +50,6 @@ public:
         return result;
     }
 };
-
 
 class DirTools
 {
