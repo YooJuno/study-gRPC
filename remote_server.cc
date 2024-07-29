@@ -45,7 +45,7 @@ ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 class DirTools
 {
 public:
-    static void addFolderToZip(zip_t* zip, const string& folderPath, const string& zipPath) 
+    static void AddFolderToZip(zip_t* zip, const string& folderPath, const string& zipPath) 
     {
         for (const auto& entry : filesystem::recursive_directory_iterator(folderPath)) 
         {
@@ -66,7 +66,7 @@ public:
         }
     }
 
-    static bool zipFolder(const string& folderPath, const string& zipFilePath)
+    static bool ZipFolder(const string& folderPath, const string& zipFilePath)
     {
         int errorp;
         zip_t* zip = zip_open(zipFilePath.c_str(), ZIP_CREATE | ZIP_TRUNCATE, &errorp);
@@ -78,7 +78,7 @@ public:
             return false;
         }
         
-        addFolderToZip(zip, folderPath, "");
+        AddFolderToZip(zip, folderPath, "");
         zip_close(zip);
 
         return true;
@@ -101,12 +101,12 @@ public:
         return result;
     }
 
-    static bool isDirOpened(DIR* dir)
+    static bool IsDirOpened(DIR* dir)
     {
         return dir;
     }
 
-    static auto GetPathOfDataset() -> string
+    static auto GetDatasetPath() -> string
     {
         string result;
 
@@ -116,7 +116,7 @@ public:
         return result;
     }
 
-    static bool isDir(const string& path)
+    static bool IsDir(const string& path)
     {
         return filesystem::is_directory((filesystem::path)path);
     }
@@ -129,7 +129,7 @@ public:
     {
         do
         {
-            _datasetPath = DirTools::GetPathOfDataset();
+            _datasetPath = DirTools::GetDatasetPath();
 
             if(_datasetPath[_datasetPath.length()-1] != '/')
                 _datasetPath += '/';
@@ -139,7 +139,7 @@ public:
             if (!_dir)
                 cout << "Can't open directory. Please retry.\n\n";
         }
-        while (!DirTools::isDirOpened(_dir));
+        while (!DirTools::IsDirOpened(_dir));
     }
 
     Status LoginToServer(ServerContext* context, const UserLoginInfo* request, LoginResult* reply) 
@@ -174,10 +174,10 @@ public:
         string targetName(request->name());
         struct stat attr;
 
-        bool isTargetDir = DirTools::isDir(_datasetPath + targetName);
+        bool isTargetDir = DirTools::IsDir(_datasetPath + targetName);
         if (isTargetDir)
         {
-            bool zipsuccess = DirTools::zipFolder(_datasetPath + targetName, _datasetPath + targetName + ".zip");
+            bool zipsuccess = DirTools::ZipFolder(_datasetPath + targetName, _datasetPath + targetName + ".zip");
 
             if(!zipsuccess)
             {
