@@ -131,7 +131,7 @@ public:
         {
             _datasetPath = DirTools::GetDatasetPath();
 
-            if(_datasetPath[_datasetPath.length()-1] != '/')
+            if (_datasetPath[_datasetPath.length()-1] != '/')
                 _datasetPath += '/';
 
             _dir = opendir(_datasetPath.c_str());
@@ -179,7 +179,7 @@ public:
         {
             bool zipsuccess = DirTools::ZipFolder(_datasetPath + targetName, _datasetPath + targetName + ".zip");
 
-            if(!zipsuccess)
+            if (!zipsuccess)
             {
                 reply->set_success(false);
                 return Status::OK;
@@ -189,7 +189,7 @@ public:
         
         ifs.open(_datasetPath + targetName, ios::binary);
 
-        if(!ifs)
+        if (!ifs)
         {
             cout << "failed to open file\n";
             reply->set_success(false);
