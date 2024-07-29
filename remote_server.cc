@@ -35,7 +35,6 @@ using remote::UserLoginInfo;
 using remote::LoginResult;
 using remote::FileNamesOfDataset;
 using remote::Empty;
-using remote::Data;
 
 using namespace std;
 
@@ -112,25 +111,17 @@ public:
         return filesystem::is_directory((filesystem::path)path);
     }
 
-    static DIR* OpenDir(string& path)
+    static auto GetCreationTimeOfFile(const string& path) -> string
     {
-        DIR* result;
-        do
+        struct stat attr;
+
+        if (stat(path.c_str(), &attr) == 0) 
         {
-            if (*(path.end() - 1) != '/')
-                path += '/';
-
-            result = opendir(path.c_str());
-
-            if (!result)
-            {
-                cout << "Can't open directory. Please retry.\n\n";\
-                return NULL;
-            }
+            string creationTimeOfFile = ctime(&attr.st_ctime);
+            *(creationTimeOfFile.end() - 1) = '\0';
+            return creationTimeOfFile;
         }
-        while (!DirTools::IsDirOpened(result));
-
-        return result;
+        return NULL;
     }
 };
 
@@ -155,9 +146,22 @@ public:
     // : 생성자에서 실제 일을 하지 않는다.
     // : 실제 일을 하기 위한 최소한의 리소스 준비
     // (I/O에 대해서는 콜백을 처리하길 권장하심)
-    Uploader(DIR* dir)
-    : _dir(dir)
-    {}
+    Uploader()
+    {
+        do
+        {
+            _datasetPath = IO::GetDatasetPath();
+
+            if(_datasetPath[_datasetPath.length()-1] != '/')
+                _datasetPath += '/';
+
+            _dir = opendir(_datasetPath.c_str());
+
+            if (!_dir)
+                cout << "Can't open directory. Please retry.\n\n";\
+        }
+        while (!DirTools::IsDirOpened(_dir));
+    }
 
     Status LoginToServer(ServerContext* context, const UserLoginInfo* request, LoginResult* reply) override
     {
@@ -186,7 +190,6 @@ public:
     {
         ifstream ifs;
         string targetName(request->name());
-        struct stat attr;
 
         bool isTargetDir = DirTools::IsDir(_datasetPath + targetName);
         if (isTargetDir)
@@ -217,13 +220,7 @@ public:
 
         reply->set_name(targetName);
         reply->set_size(_buffer.length());
-
-        if (stat((_datasetPath + targetName).c_str(), &attr) == 0) 
-        {
-            string creationTimeOfTargetFile = ctime(&attr.st_ctime);
-            *(creationTimeOfTargetFile.end() - 1) = '\0';
-            reply->set_date(creationTimeOfTargetFile); 
-        }
+        reply->set_date(DirTools::GetCreationTimeOfFile(_datasetPath + targetName)); 
         
         if (isTargetDir)
             filesystem::remove(_datasetPath + targetName);
@@ -273,33 +270,23 @@ void RunServer(uint16_t port)
 
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
+
+    Uploader service;
+
+    ServerBuilder builder;
+
+    builder.SetMaxSendMessageSize(4 * 1024 * 1024 /* == 4MB */);
+    builder.SetMaxMessageSize(4 * 1024 * 1024 /* == 4MB */);
+    builder.SetMaxReceiveMessageSize(4 * 1024 * 1024 /* == 4MB */);
+
+    builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
+
+    builder.RegisterService(&service);
     
-    auto datasetPath = IO::GetDatasetPath();
-    DIR* dir = DirTools::OpenDir(datasetPath);
+    unique_ptr<Server> server(builder.BuildAndStart());
+    cout << "\nServer listening on " << serverAddress << endl;
 
-    if (dir)
-    {
-        Uploader service(dir);
-
-        ServerBuilder builder;
-
-        builder.SetMaxSendMessageSize(4 * 1024 * 1024 /* == 4MB */);
-        builder.SetMaxMessageSize(4 * 1024 * 1024 /* == 4MB */);
-        builder.SetMaxReceiveMessageSize(4 * 1024 * 1024 /* == 4MB */);
-
-        builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
-
-        builder.RegisterService(&service);
-        
-        unique_ptr<Server> server(builder.BuildAndStart());
-        cout << "\nServer listening on " << serverAddress << endl;
-
-        server->Wait();
-    }
-    else
-    {
-        return;
-    }   
+    server->Wait();
 }
 
 int main(int argc, char** argv) 

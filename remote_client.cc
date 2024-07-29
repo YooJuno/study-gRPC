@@ -26,11 +26,60 @@ using remote::LoginResult;
 using remote::FileNamesOfDataset;
 using remote::Empty;
 
-using remote::Data;
-
 using namespace std;
 
 ABSL_FLAG(string, target, "localhost:50051", "Server address");
+
+
+class IO
+{
+public:
+    static auto GetLoginInfoByUser() -> pair<string, string> 
+    {   
+        cout << "**** [Login] ****\n";
+        string id;
+        string pw;
+
+        cout << "ID : ";
+        cin >> id;
+        cout << "PW : ";
+        cin >> pw;
+
+        return make_pair(id, pw);
+    }
+
+    static auto GetPathOfDownload() -> string
+    {
+        string result;
+
+        cout << "Enter path where you wanna save your file (ex: ../../download/) \n: ";
+        cin >> result;
+
+        return result;
+    }
+
+    static void PrintHeader(const Header& file)
+    {
+        const google::protobuf::Descriptor* descriptor = file.GetDescriptor();
+        const google::protobuf::Reflection* reflection = file.GetReflection();
+
+        cout << "\n***** [File info] *****\n";
+        for (auto i=1; i<descriptor->field_count(); i++) 
+        {
+            const google::protobuf::FieldDescriptor* field = descriptor->field(i);
+            cout << field->name() << " : ";
+
+            if (field->type() == google::protobuf::FieldDescriptor::TYPE_INT32) 
+                cout << reflection->GetInt32(file, field) << endl;
+            else if (field->type() == google::protobuf::FieldDescriptor::TYPE_STRING) 
+                cout << reflection->GetString(file, field) << endl;
+            else if (field->type() == google::protobuf::FieldDescriptor::TYPE_BOOL) 
+                cout << std::boolalpha << reflection->GetBool(file, field) << endl;
+            else 
+                cout << "Unknown" << endl;
+        }
+    }
+};
 
 class Downloader 
 {
@@ -117,6 +166,11 @@ public:
             return reply;
         }
 
+        if(header.name() != "" && header.size() != 0 && header.date() != "")
+            header.set_success(true);
+
+        reply.mutable_header()->CopyFrom(header);\
+
         std::unique_ptr<ClientReader<Data> > reader(_stub->DownloadData(&contextForData, request));
 
         while (reader->Read(&data)) 
@@ -124,6 +178,7 @@ public:
             queue += data.buffer();
             PrintProgress(queue.length(), header.size());
         }
+
         if(queue.length() != header.size())
         {
             reply.set_success(false);
@@ -138,7 +193,9 @@ public:
             return reply;
         }
 
+        reply.mutable_data()->set_buffer(queue);
         reply.set_success(true);
+
         return reply;
     }
 
@@ -172,56 +229,6 @@ public:
 
 private:
     unique_ptr<RemoteCommunication::Stub> _stub;
-};
-
-class IO
-{
-public:
-    static auto GetLoginInfoByUser() -> pair<string, string> 
-    {   
-        cout << "**** [Login] ****\n";
-        string id;
-        string pw;
-
-        cout << "ID : ";
-        cin >> id;
-        cout << "PW : ";
-        cin >> pw;
-
-        return make_pair(id, pw);
-    }
-
-    static auto GetPathOfDownload() -> string
-    {
-        string result;
-
-        cout << "Enter path where you wanna save your file (ex: ../../download/) \n: ";
-        cin >> result;
-
-        return result;
-    }
-
-    static void PrintHeader(const Header& file)
-    {
-        const google::protobuf::Descriptor* descriptor = file.GetDescriptor();
-        const google::protobuf::Reflection* reflection = file.GetReflection();
-
-        cout << "\n***** [File info] *****\n";
-        for (auto i=1; i<descriptor->field_count(); i++) 
-        {
-            const google::protobuf::FieldDescriptor* field = descriptor->field(i);
-            cout << field->name() << " : ";
-
-            if (field->type() == google::protobuf::FieldDescriptor::TYPE_INT32) 
-                cout << reflection->GetInt32(file, field) << endl;
-            else if (field->type() == google::protobuf::FieldDescriptor::TYPE_STRING) 
-                cout << reflection->GetString(file, field) << endl;
-            else if (field->type() == google::protobuf::FieldDescriptor::TYPE_BOOL) 
-                cout << std::boolalpha << reflection->GetBool(file, field) << endl;
-            else 
-                cout << "Unknown" << endl;
-        }
-    }
 };
 
 void RunClient(string targetStr)
