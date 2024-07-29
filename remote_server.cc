@@ -156,8 +156,7 @@ public:
     // : 실제 일을 하기 위한 최소한의 리소스 준비
     // (I/O에 대해서는 콜백을 처리하길 권장하심)
     Uploader(DIR* dir)
-    :  
-    (dir)
+    : _dir(dir)
     {}
 
     Status LoginToServer(ServerContext* context, const UserLoginInfo* request, LoginResult* reply) override
