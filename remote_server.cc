@@ -42,6 +42,9 @@ using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
+// REMARK
+// - 더 좋은 이름 찾기
+//
 class Filesystem
 {
 public:
@@ -94,8 +97,10 @@ public:
             string name = entry->d_name;
             if (name == "." || name == "..") 
                 continue;
+
             result.push_back(name);
         }
+
         rewinddir(dir);
 
         return result;
@@ -125,13 +130,16 @@ public:
 class Uploader final : public RemoteCommunication::Service 
 {
 public:
+    // TODO
+    // : 생성자에서 실제 일을 하지 않는다.
+    // : 실제 일을 하기 위한 최소한의 리소스 준비
     Uploader()
     {
         do
         {
             _datasetPath = Filesystem::GetPathOfDataset();
 
-            if(_datasetPath[_datasetPath.length()-1] != '/')
+            if (_datasetPath[_datasetPath.length()-1] != '/')
                 _datasetPath += '/';
 
             _dir = opendir(_datasetPath.c_str());
@@ -142,8 +150,7 @@ public:
         while (!Filesystem::isDirOpened(_dir));
     }
 
-    Status LoginToServer(ServerContext* context, const UserLoginInfo* request, LoginResult* reply) 
-    override
+    Status LoginToServer(ServerContext* context, const UserLoginInfo* request, LoginResult* reply) override
     {
         _userId = request->id();
         _userPw = request->pw();
