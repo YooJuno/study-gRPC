@@ -42,7 +42,7 @@ using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-class Filesystem
+class DirTools
 {
 public:
     static void addFolderToZip(zip_t* zip, const string& folderPath, const string& zipPath) 
@@ -129,7 +129,7 @@ public:
     {
         do
         {
-            _datasetPath = Filesystem::GetPathOfDataset();
+            _datasetPath = DirTools::GetPathOfDataset();
 
             if(_datasetPath[_datasetPath.length()-1] != '/')
                 _datasetPath += '/';
@@ -139,7 +139,7 @@ public:
             if (!_dir)
                 cout << "Can't open directory. Please retry.\n\n";
         }
-        while (!Filesystem::isDirOpened(_dir));
+        while (!DirTools::isDirOpened(_dir));
     }
 
     Status LoginToServer(ServerContext* context, const UserLoginInfo* request, LoginResult* reply) 
@@ -159,7 +159,7 @@ public:
     Status GetFileNamesOfDataset(ServerContext* context, const Empty* request, FileNamesOfDataset* reply) 
     override 
     {
-        auto fileNames = Filesystem::GetFileNamesFrom(_dir);
+        auto fileNames = DirTools::GetFileNamesFrom(_dir);
         
         for (const auto& i : fileNames)
             reply->add_filenames(i);
@@ -174,10 +174,10 @@ public:
         string targetName(request->name());
         struct stat attr;
 
-        bool isTargetDir = Filesystem::isDir(_datasetPath + targetName);
+        bool isTargetDir = DirTools::isDir(_datasetPath + targetName);
         if (isTargetDir)
         {
-            bool zipsuccess = Filesystem::zipFolder(_datasetPath + targetName, _datasetPath + targetName + ".zip");
+            bool zipsuccess = DirTools::zipFolder(_datasetPath + targetName, _datasetPath + targetName + ".zip");
 
             if(!zipsuccess)
             {
