@@ -100,7 +100,7 @@ public:
     {   
         cout << "Downloading " ;
         cout << "[";
-        int progressBarLength = 70;
+        int progressBarLength = 40;
         for(int i=0; i<progressBarLength ; i++)
         {
             if (i<(int)((downloadedSize/(float)fullSize)*progressBarLength))
