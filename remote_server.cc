@@ -24,13 +24,10 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using grpc::ServerWriter;
 
 using remote::RemoteCommunication;
 using remote::RemoteRequest;
 using remote::File;
-using remote::Header;
-using remote::Data;
 using remote::UserLoginInfo;
 using remote::LoginResult;
 using remote::FileNamesOfDataset;
@@ -186,7 +183,7 @@ public:
         return Status::OK;
     }
 
-    Status DownloadHeader(ServerContext* context, const RemoteRequest* request, Header* reply) override 
+    Status DownloadFile(ServerContext* context, const RemoteRequest* request, File* reply) override 
     {
         ifstream ifs;
         string targetName(request->name());
@@ -218,32 +215,13 @@ public:
     
         ifs.close();
 
-        reply->set_name(targetName);
-        reply->set_size(_buffer.length());
-        reply->set_date(DirTools::GetCreationTimeOfFile(_datasetPath + targetName)); 
+        reply->mutable_header()->set_name(targetName);
+        reply->mutable_header()->set_size(_buffer.length());
+        reply->mutable_header()->set_date(DirTools::GetCreationTimeOfFile(_datasetPath + targetName)); 
+        reply->mutable_data()->set_buffer(_buffer);
         
         if (isTargetDir)
             filesystem::remove(_datasetPath + targetName);
-
-        return Status::OK;
-    }
-    
-    Status DownloadData(ServerContext* context, const RemoteRequest* request, ServerWriter<Data>* reply) override 
-    {
-        Data chunk;
-
-        int iter;
-        for (iter=0; iter < _buffer.length() - request->chunksize(); iter += request->chunksize())
-        {
-            chunk.set_buffer(_buffer.substr(iter, request->chunksize()));
-            reply->Write(chunk);
-        }
-
-        if (iter <  _buffer.length())
-        {
-            chunk.set_buffer(_buffer.substr(iter, _buffer.length() - iter));
-            reply->Write(chunk);
-        }
 
         return Status::OK;
     }
@@ -275,9 +253,9 @@ void RunServer(uint16_t port)
 
     ServerBuilder builder;
 
-    builder.SetMaxSendMessageSize(4 * 1024 * 1024 /* == 4MB */);
-    builder.SetMaxMessageSize(4 * 1024 * 1024 /* == 4MB */);
-    builder.SetMaxReceiveMessageSize(4 * 1024 * 1024 /* == 4MB */);
+    builder.SetMaxSendMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
+    builder.SetMaxMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
+    builder.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
 
     builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
 
