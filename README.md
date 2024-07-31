@@ -2,7 +2,8 @@
 
 ## 구현 환경
 
-- OS : Ubuntu20.04.0 LTS, macOS SONOMA(v.14.5)
+- Ubuntu 20.04 이상
+- macOS 14
 
 ## Installation
 
@@ -86,7 +87,7 @@ cmake -DgRPC_INSTALL=ON \
       -DgRPC_BUILD_TESTS=OFF \
       -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR \
       ../..
-make -j 4
+make -j 8
 make install
 popd
 ```
@@ -98,9 +99,9 @@ cd ~/grpc/examples/cpp/
 git clone https://github.com/YooJuno/study-gRPC
 cd study-gRPC
 mkdir -p cmake/build download
-cd cmake/build
+pushd cmake/build
 cmake -DCMAKE_PREFIX_PATH=$MY_INSTALL_DIR ../../
-make
+make -j8
 ```
 
 ## **Try it!**
@@ -108,26 +109,21 @@ make
 ### SERVER
 
 ```bash
-./remote_serv
+./remote_serv ../../dataset
 ```
 
-- and then enter dataset path
+- ./remote_serv  <DATASET_FOLDER_PATH>
 
-![Untitled](images/Untitled.png)
 
 ![Untitled](images/Untitled%207.png)
 
 ### CLIENT
 
 ```bash
-./remote_client
+./remote_client ../../download
 ```
-
-- Enter ID, Password
     
-    ![Untitled](images/Untitled%201.png)
-    
-
+- ./remote_client <DOWNLOAD_FOLDER_PATH>
 - Choose number you wanna download.
     
     ![Untitled](images/Untitled%202.png)
@@ -136,11 +132,6 @@ make
 - Then you can see the information of file you select.
     
     ![Untitled](images/Untitled%203.png)
-    
-
-- Last, Enter the path of Download Folder
-    
-    ![Untitled](images/Untitled%204.png)
     
 
 - You can see the picture in Download folder
