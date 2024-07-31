@@ -27,7 +27,7 @@ using namespace std;
 
 ABSL_FLAG(string, target, "localhost:50051", "Server address");
 
-class IO
+class InputAndOutput
 {
 public:
     static void PrintHeader(const Header& file)
