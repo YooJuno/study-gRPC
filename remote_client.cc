@@ -36,7 +36,7 @@ public:
         const google::protobuf::Reflection* reflection = file.GetReflection();
 
         cout << "\n***** [File info] *****\n";
-        for (auto i=1; i<descriptor->field_count(); i++) 
+        for (auto i=0; i<descriptor->field_count(); i++) 
         {
             const google::protobuf::FieldDescriptor* field = descriptor->field(i);
             cout << field->name() << " : ";
