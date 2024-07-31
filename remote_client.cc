@@ -110,6 +110,7 @@ public:
         if (!status.ok())
         {
             reply.set_success(false);
+
             return reply;
         }
 
@@ -136,7 +137,8 @@ public:
         else
             ofs.open(pathOfDownloadDir + f_name, ios::out | ios::binary);
 
-        ofs.write(buffer.c_str(), buffer.length());           
+        ofs.write(buffer.c_str(), buffer.length());  
+                 
         ofs.close();
     }
 
