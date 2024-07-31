@@ -13,14 +13,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Find libzip package
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBZIP REQUIRED libzip)
-
-# Include libzip directories
-include_directories(${LIBZIP_INCLUDE_DIRS})
-link_directories(${LIBZIP_LIBRARY_DIRS})
-
 # Generated sources
 set(remote_message_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/remote_message.pb.cc")
 set(remote_message_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/remote_message.pb.h")
@@ -55,7 +47,8 @@ target_link_libraries(remote_message_grpc_proto
 foreach(_target
   remote_client remote_server)
   add_executable(${_target} "${_target}.cc")
-  target_link_libraries(${_target}
+  target_link_libraries(
+    ${_target}
     remote_message_grpc_proto
     absl::check
     absl::flags
@@ -63,6 +56,6 @@ foreach(_target
     absl::log
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
-    ${_PROTOBUF_LIBPROTOBUF}
-    ${LIBZIP_LIBRARIES})
+    ${_PROTOBUF_LIBPROTOBUF})
+  
 endforeach()
