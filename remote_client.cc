@@ -168,9 +168,9 @@ void RunClient(string targetStr, string pathOfDownloadDir)
             return ;
         }
 
-        IO::PrintFileNames(fileNames);
+        InputAndOutput::PrintFileNames(fileNames);
 
-        auto fileName = IO::SelectFileNameFrom(fileNames);
+        auto fileName = InputAndOutput::SelectFileNameFrom(fileNames);
 
         file = service.DownloadFile(fileName);
 
@@ -179,7 +179,7 @@ void RunClient(string targetStr, string pathOfDownloadDir)
             cout << "Can't download [" << fileName << "]. Please retry.\n\n";
     }
     
-    IO::PrintHeader(file.header());
+    InputAndOutput::PrintHeader(file.header());
 
     service.SaveReplyTo(pathOfDownloadDir, file);
 }
