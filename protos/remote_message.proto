@@ -4,10 +4,8 @@ package remote;
 
 service RemoteCommunication
 {
-    rpc DownloadHeader (RemoteRequest) returns (Header) {}
-    rpc DownloadData (RemoteRequest) returns (stream Data) {}
-    rpc LoginToServer (UserLoginInfo) returns (LoginResult) {}
-    rpc GetFileNamesOfDataset (Empty) returns (FileNamesOfDataset) {}
+    rpc DownloadFile (RemoteRequest) returns (File) {}
+    rpc GetFileNamesInDataset (Empty) returns (FileNamesOfDataset) {}
 }
 
 message Empty {}
@@ -15,12 +13,12 @@ message Empty {}
 message RemoteRequest
 {
     string name = 1;
-    int32 chunksize = 2; // for stream
 }
 
 message Data
 {
     bytes buffer = 1;
+    bool success = 2;
 }
 
 message Header
@@ -36,17 +34,6 @@ message File
     Header header = 1;
     Data data = 2;
     bool success = 3;
-}
-
-message UserLoginInfo
-{
-    string id = 1;
-    string pw = 2;
-}
-
-message LoginResult
-{
-    bool result = 1;
 }
 
 message FileList
