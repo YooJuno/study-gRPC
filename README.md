@@ -134,7 +134,7 @@ make -j8
     ![Untitled](images/Untitled%203.png)
     
 
-- You can see the picture in Download folder
+- You can see the file in Download folder
     
     ![Untitled](images/Untitled%205.png)
     
