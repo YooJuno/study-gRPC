@@ -146,7 +146,6 @@ void RunServer(uint16_t port, char* pathOfDatasetDir)
     ServerBuilder builder;
 
     builder.SetMaxSendMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
-    builder.SetMaxMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
     builder.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
 
     builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());

@@ -147,6 +147,7 @@ private:
 void RunClient(string targetStr, string pathOfDownloadDir)
 {
     grpc::ChannelArguments args;
+    args.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
     args.SetMaxSendMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
 
     Downloader service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
