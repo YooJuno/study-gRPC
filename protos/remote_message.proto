@@ -10,6 +10,22 @@ service RemoteCommunication
 
 message Empty {}
 
+message Mat 
+{
+    uint32 xSize = 1;
+    uint32 ySize = 2;
+    string encoding = 3; //CV_32FC2
+
+    message Scalar 
+    {
+        uint32 x = 1;
+        uint32 y = 2;
+        uint32 z = 3;
+    }
+
+    repeated Scalar matrix = 4; 
+}
+
 message RemoteRequest
 {
     string name = 1;

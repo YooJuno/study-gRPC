@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package practice;
+
+message Mat 
+{
+    uint32 width = 1;
+    uint32 height = 2;
+    uint32 chennels = 3;
+    string type = 4; //CV_32FC2
+
+    message Scalar 
+    {
+        uint32 r = 1;
+        uint32 g = 2;
+        uint32 b = 3;
+    }
+
+    repeated Scalar matrix = 5; 
+}
