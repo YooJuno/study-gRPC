@@ -17,9 +17,6 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#include <filesystem>
-#include <zip.h>
-
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -28,8 +25,6 @@ using grpc::Status;
 using remote::RemoteCommunication;
 using remote::RemoteRequest;
 using remote::File;
-using remote::UserLoginInfo;
-using remote::LoginResult;
 using remote::FileNamesOfDataset;
 using remote::Empty;
 
@@ -37,63 +32,9 @@ using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-class IO
-{
-public:
-    static auto GetDatasetPath() -> string
-    {
-        string result;
-
-        cout << "Enter dataset path (ex: ../../dataset/)\n: ";
-        cin >> result;
-
-        return result;
-    }
-};
-
 class DirTools
 {
 public:
-    static void AddFolderToZip(zip_t* zip, const string& folderPath, const string& zipPath) 
-    {
-        for (const auto& entry : filesystem::recursive_directory_iterator(folderPath)) 
-        {
-            if (entry.is_directory()) 
-                continue;
-
-            string filePath = entry.path().string();
-            string fileNameInZip = zipPath + entry.path().string().substr(folderPath.length() + 1);
-
-            zip_source_t* source = zip_source_file(zip, filePath.c_str(), 0, 0);
-            if (source == nullptr) 
-            {
-                cerr << "Failed to add file to zip: " << filePath << endl;
-                continue;
-            }
-
-            zip_file_add(zip, fileNameInZip.c_str(), source, ZIP_FL_OVERWRITE);
-        }
-    }
-
-    static bool ZipFolder(const string& folderPath, const string& zipFilePath)
-    {
-        int errorp;
-        zip_t* zip = zip_open(zipFilePath.c_str(), ZIP_CREATE | ZIP_TRUNCATE, &errorp);
-        if (zip == nullptr) 
-        {
-            zip_error_t error;
-            zip_error_init_with_code(&error, errorp);
-            zip_error_fini(&error);
-
-            return false;
-        }
-        
-        AddFolderToZip(zip, folderPath, "");
-        zip_close(zip);
-
-        return true;
-    }
-
     static auto GetFileNamesFrom(DIR* dir) -> vector<string>
     {
         vector<string> result;
@@ -113,16 +54,6 @@ public:
         return result;
     }
 
-    static bool IsDirOpened(DIR* dir)
-    {
-        return dir;
-    }
-
-    static bool IsDir(const string& path)
-    {
-        return filesystem::is_directory((filesystem::path)path);
-    }
-
     static auto GetCreationTimeOfFile(const string& path) -> string
     {
         struct stat attr;
@@ -131,56 +62,22 @@ public:
         {
             string creationTimeOfFile = ctime(&attr.st_ctime);
             *(creationTimeOfFile.end() - 1) = '\0';
+
             return creationTimeOfFile;
         }
         
         return NULL;
-    }
-
-    static auto OpenDir() -> pair<DIR*, string>
-    {   
-        string datasetPath;
-        DIR* dir;
-
-        do
-        {
-            datasetPath = IO::GetDatasetPath();
-
-            if (datasetPath[datasetPath.length()-1] != '/')
-                datasetPath += '/';
-
-            dir = opendir(datasetPath.c_str());
-
-            if (!dir)
-                cout << "Can't open directory. Please retry.\n\n";\
-        }
-        while (!DirTools::IsDirOpened(dir));
-
-        return make_pair(dir, datasetPath);
     }
 };
 
 class Uploader final : public RemoteCommunication::Service 
 {
 public:
-    Uploader(DIR* dir, const string& datasetPath)
-    : _dir(dir), _datasetPath(datasetPath)
+    Uploader(DIR* dir, const string& pathOfDatasetDir)
+    : _dir(dir), _pathOfDatasetDir(pathOfDatasetDir)
     {}
 
-    Status LoginToServer(ServerContext* context, const UserLoginInfo* request, LoginResult* reply) override
-    {
-        _userId = request->id();
-        _userPw = request->pw();
-
-        if (_userId == "juno" && _userPw == "980220") // 추후에 DB연동 시스템으로 확장.
-            reply->set_result(true);
-        else
-            reply->set_result(false);
-
-        return Status::OK;
-    }
-
-    Status GetFileNamesOfDataset(ServerContext* context, const Empty* request, FileNamesOfDataset* reply) override 
+    Status GetFileNamesInDataset(ServerContext* context, const Empty* request, FileNamesOfDataset* reply) override 
     {
         auto fileNames = DirTools::GetFileNamesFrom(_dir);
         
@@ -195,21 +92,7 @@ public:
         ifstream ifs;
         string targetName(request->name());
 
-        bool isTargetDir = DirTools::IsDir(_datasetPath + targetName);
-        if (isTargetDir)
-        {
-            bool zipsuccess = DirTools::ZipFolder(_datasetPath + targetName, _datasetPath + targetName + ".zip");
-
-            if (!zipsuccess)
-            {
-                reply->set_success(false);
-
-                return Status::OK;
-            }
-            targetName += ".zip";
-        }
-        
-        ifs.open(_datasetPath + targetName, ios::binary);
+        ifs.open(_pathOfDatasetDir + targetName, ios::binary);
 
         if (!ifs)
         {
@@ -224,19 +107,14 @@ public:
 
         reply->mutable_header()->set_name(targetName);
         reply->mutable_header()->set_size(_buffer.length());
-        reply->mutable_header()->set_date(DirTools::GetCreationTimeOfFile(_datasetPath + targetName)); 
+        reply->mutable_header()->set_date(DirTools::GetCreationTimeOfFile(_pathOfDatasetDir + targetName)); 
         reply->mutable_data()->set_buffer(_buffer);
-        
-        if (isTargetDir)
-            filesystem::remove(_datasetPath + targetName);
 
         return Status::OK;
     }
 
 private:
-    string _userId;
-    string _userPw;
-    string _datasetPath;
+    string _pathOfDatasetDir;
     DIR* _dir;
     string _buffer;
 };
@@ -249,17 +127,21 @@ private:
 // but *builder.SetMax...Size* codes are  //
 // generated by juno                      //
 ////////////////////////////////////////////
-void RunServer(uint16_t port) 
+void RunServer(uint16_t port, char* pathOfDatasetDir) 
 {
     string serverAddress = absl::StrFormat("0.0.0.0:%d", port);
 
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
 
-    DIR* dir;
-    string datasetPath;
-    tie(dir, datasetPath) = DirTools::OpenDir();
-    Uploader service(dir, datasetPath);
+    DIR* dir = opendir(pathOfDatasetDir);
+    if (!dir)
+    {
+        cout << "Can't open directory. Please retry.\n\n";\
+
+        return;
+    }
+    Uploader service(dir, pathOfDatasetDir);
 
     ServerBuilder builder;
 
@@ -272,6 +154,7 @@ void RunServer(uint16_t port)
     builder.RegisterService(&service);
     
     unique_ptr<Server> server(builder.BuildAndStart());
+
     cout << "\nServer listening on " << serverAddress << endl;
 
     server->Wait();
@@ -280,7 +163,7 @@ void RunServer(uint16_t port)
 int main(int argc, char** argv) 
 {
     absl::ParseCommandLine(argc, argv);
-    RunServer(absl::GetFlag(FLAGS_port));
+    RunServer(absl::GetFlag(FLAGS_port), argv[1]);
     
     return 0;
 }

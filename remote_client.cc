@@ -20,8 +20,6 @@ using remote::RemoteRequest;
 using remote::File;
 using remote::Header;
 using remote::Data;
-using remote::UserLoginInfo;
-using remote::LoginResult;
 using remote::FileNamesOfDataset;
 using remote::Empty;
 
@@ -29,34 +27,9 @@ using namespace std;
 
 ABSL_FLAG(string, target, "localhost:50051", "Server address");
 
-
 class IO
 {
 public:
-    static auto GetLoginInfoByUser() -> pair<string, string> 
-    {   
-        cout << "**** [Login] ****\n";
-        string id;
-        string pw;
-
-        cout << "ID : ";
-        cin >> id;
-        cout << "PW : ";
-        cin >> pw;
-
-        return make_pair(id, pw);
-    }
-
-    static auto GetPathOfDownload() -> string
-    {
-        string result;
-
-        cout << "Enter path where you wanna save your file (ex: ../../download/) \n: ";
-        cin >> result;
-
-        return result;
-    }
-
     static void PrintHeader(const Header& file)
     {
         const google::protobuf::Descriptor* descriptor = file.GetDescriptor();
@@ -78,6 +51,25 @@ public:
                 cout << "Unknown" << endl;
         }
     }
+
+    static void PrintFileNames(vector<string> fileNames)
+    {
+        int idx;
+    
+        cout << "\n**** [List] ****\n";
+        for (idx = 0; idx < fileNames.size(); idx++)
+            cout << "[" << idx+1 << "] " << fileNames[idx] << endl;
+        cout << "[" << idx+1 << "] nothing to download(quit)" << endl;
+    }
+
+    static auto SelectFileNameFrom(vector<string> fileNames) -> string 
+    {   
+        int inputNum;
+        cout << "Select you wanna download\n: " ;
+        cin >> inputNum;
+
+        return fileNames[inputNum-1];
+    }
 };
 
 class Downloader 
@@ -86,31 +78,14 @@ public:
     Downloader(shared_ptr<Channel> channel)
         : _stub (RemoteCommunication::NewStub(channel)) {}
 
-    bool TryLoginToServer(const string& id, const string& pw)
-    {
-        ClientContext context;
-        UserLoginInfo request;
-        LoginResult reply;
-
-        request.set_id(id);
-        request.set_pw(pw);
-
-        Status status = _stub->LoginToServer(&context, request, &reply);
-
-        if (status.ok())
-            return reply.result();
-                
-        return false;
-    }
-
-    auto GetFileNamesOfDataset() -> vector<string> 
+    auto GetFileNamesInDataset() -> vector<string> 
     {   
         vector<string> result;
         ClientContext context;
         Empty request;
         FileNamesOfDataset reply;
 
-        Status status = _stub->GetFileNamesOfDataset(&context, request, &reply);
+        Status status = _stub->GetFileNamesInDataset(&context, request, &reply);
 
         if (status.ok())
             for(const auto& i : reply.filenames())
@@ -119,29 +94,6 @@ public:
             result.push_back("error");
         
         return result;
-    }
-    
-    auto SelectFileNameToDownload() -> string 
-    {   
-        vector<string> fileNames;
-        int inputNum;
-        int i;
-        
-        do
-        {
-            fileNames = GetFileNamesOfDataset();
-        } 
-        while (fileNames[0] == "error");
-        
-        cout << "\n**** [List] ****\n";
-        for (i = 0; i < fileNames.size(); i++)
-            cout << "[" << i+1 << "] " << fileNames[i] << endl;
-        fileNames.push_back("quit");
-        cout << "[" << i+1 << "] nothing to download(quit)" << endl;
-        cout << "Select you wanna download\n: " ;
-        cin >> inputNum;
-
-        return fileNames[inputNum-1];
     }
 
     auto DownloadFile(const string& fileName) -> File
@@ -172,30 +124,18 @@ public:
         return reply;
     }
 
-    void PrintProgress(int downloadedSize, int fullSize)
-    {   
-        cout << "Downloading " ;
-        cout << "[";
-        int progressBarLength = 40;
-        for(int i=0; i<progressBarLength ; i++)
-        {
-            if (i<(int)((downloadedSize/(float)fullSize)*progressBarLength))
-                cout << "#";
-            else
-                cout << " ";
-        }
-        cout << "]\r";
-
-        if (downloadedSize/fullSize == 1) cout << "\n";
-    }
-
-    void SaveReplyTo(const string& PathOfDownload, const File file)
+    void SaveReplyTo(const string& pathOfDownloadDir, const File f)
     {
-        string buffer = file.data().buffer();
-        string file_name = file.header().name();
+        string buffer = f.data().buffer();
+        string f_name = f.header().name();
         
         ofstream ofs;
-        ofs.open(PathOfDownload + file_name, ios::out | ios::binary);
+
+        if (pathOfDownloadDir[pathOfDownloadDir.length()-1] != '/')
+            ofs.open(pathOfDownloadDir + '/' + f_name, ios::out | ios::binary);
+        else
+            ofs.open(pathOfDownloadDir + f_name, ios::out | ios::binary);
+
         ofs.write(buffer.c_str(), buffer.length());           
         ofs.close();
     }
@@ -204,65 +144,49 @@ private:
     unique_ptr<RemoteCommunication::Stub> _stub;
 };
 
-void RunClient(string targetStr)
+void RunClient(string targetStr, string pathOfDownloadDir)
 {
     grpc::ChannelArguments args;
     args.SetMaxSendMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
-    args.SetLoadBalancingPolicyName("round_robin");
 
     Downloader service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
-    string userId;
-    string userPw;
-    bool permission = false;
 
-    for (int cnt=0; cnt<3 & !permission; cnt++)
+    File file;
+    bool isDownloaded = false;
+
+    for (auto cnt=0; cnt<3 && !isDownloaded; cnt++)
     {
-        tie(userId, userPw) = IO::GetLoginInfoByUser();
-        permission = service.TryLoginToServer(userId, userPw);
-        if (!permission) 
-            cout << "Login failed. Please retry\n\n";
-    }
-
-    if (permission)
-    {
-        File file;
-        bool isDownloaded = false;
-
-        for(auto cnt=0; cnt<3 && !isDownloaded; cnt++)
-        {
-            auto fileName = service.SelectFileNameToDownload();
-            if (fileName == "quit")
-            {
-                cout << "Good bye\n";
-                return ;
-            }
-
-            file = service.DownloadFile(fileName);
-
-            isDownloaded = file.success();
-            if(!isDownloaded)
-                cout << "Can't download [" << fileName << "]. Please retry.\n\n";
-        }
+        auto fileNames = service.GetFileNamesInDataset();
         
-        IO::PrintHeader(file.header());
+        if (fileNames[0] == "error")
+        {
+            cout << "The server connection terminated abnormally.\n";
 
-        auto pathOfDownload = IO::GetPathOfDownload();
-        if (pathOfDownload[pathOfDownload.length()-1] != '/')
-            pathOfDownload += '/';
+            return ;
+        }
 
-        service.SaveReplyTo(pathOfDownload, file);
+        IO::PrintFileNames(fileNames);
+
+        auto fileName = IO::SelectFileNameFrom(fileNames);
+
+        file = service.DownloadFile(fileName);
+
+        isDownloaded = file.success();
+        if (!isDownloaded)
+            cout << "Can't download [" << fileName << "]. Please retry.\n\n";
     }
-    else
-    {
-        cout << "Incorrect access 3 times.\n";\
-        exit(1);
-    }
+    
+    IO::PrintHeader(file.header());
+
+    service.SaveReplyTo(pathOfDownloadDir, file);
 }
 
 int main(int argc, char** argv)  
 {
     absl::ParseCommandLine(argc, argv);
-    RunClient(absl::GetFlag(FLAGS_target));
+
+    string pathOfDownloadDir(argv[1]);
+    RunClient(absl::GetFlag(FLAGS_target), pathOfDownloadDir);
 
     return 0;
 }
