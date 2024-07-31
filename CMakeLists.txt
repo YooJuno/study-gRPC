@@ -8,11 +8,6 @@ include(../cmake/common.cmake)
 get_filename_component(remote_message_proto "./protos/remote_message.proto" ABSOLUTE)
 get_filename_component(remote_message_proto_path "${remote_message_proto}" PATH)
 
-enable_language(CXX)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 # Generated sources
 set(remote_message_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/remote_message.pb.cc")
 set(remote_message_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/remote_message.pb.h")
@@ -57,5 +52,4 @@ foreach(_target
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
-  
 endforeach()
