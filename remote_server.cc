@@ -120,7 +120,7 @@ private:
 };
 
 //////////////////////////////////////////////////////////////////////
-//                               RENARK                             //
+//                               REMARK                             //
 //////////////////////////////////////////////////////////////////////
 // void Runserver(uint16_t port, char* pathOfDatasetDir) is         //
 // reference code from grpc/example/cpp.                            //
