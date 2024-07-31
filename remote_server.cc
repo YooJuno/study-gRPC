@@ -137,7 +137,7 @@ void RunServer(uint16_t port, char* pathOfDatasetDir)
     DIR* dir = opendir(pathOfDatasetDir);
     if (!dir)
     {
-        cout << "Can't open directory. Please retry.\n\n";\
+        cout << "Can't open directory.\n\n";\
 
         return;
     }
