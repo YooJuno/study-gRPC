@@ -10,20 +10,20 @@ service RemoteCommunication
 
 message Empty {}
 
-message Mat 
+message Pixel 
 {
-    uint32 xSize = 1;
-    uint32 ySize = 2;
-    string encoding = 3; //CV_32FC2
+    uint32 r = 1;
+    uint32 g = 2;
+    uint32 b = 3;
+}
 
-    message Scalar 
-    {
-        uint32 x = 1;
-        uint32 y = 2;
-        uint32 z = 3;
-    }
-
-    repeated Scalar matrix = 4; 
+message ProtoMat 
+{
+    uint32 width = 1;
+    uint32 height = 2;
+    uint32 channels = 3;
+    uint32 type = 4; //CV_32FC2
+    repeated Pixel matrix = 5; 
 }
 
 message RemoteRequest
@@ -49,7 +49,8 @@ message File
 {
     Header header = 1;
     Data data = 2;
-    bool success = 3;
+    ProtoMat matdata = 3;
+    bool success = 4;
 }
 
 message FileList
