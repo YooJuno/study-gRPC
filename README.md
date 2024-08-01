@@ -112,7 +112,7 @@ make -j 8
 ### SERVER
 
 ```bash
-./remote_server ../../dataset/
+./remote_server ../dataset/
 ```
 
 - ./remote_server  <DATASET_FOLDER_PATH>
@@ -124,7 +124,7 @@ make -j 8
 
 ```bash
 mkdir ../download
-./remote_client ../../download/
+./remote_client ../download/
 ```
     
 - ./remote_client <DOWNLOAD_FOLDER_PATH>
