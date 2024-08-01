@@ -98,12 +98,9 @@ popd
 cd ~
 git clone https://github.com/YooJuno/study-gRPC
 cd study-gRPC
-mkdir -p cmake/build
-pushd cmake/build
-cmake -DgRPC_INSTALL=ON \
-      -DgRPC_BUILD_TESTS=OFF \
-      -DCMAKE_INSTALL_PREFIX=$HOME/.local \
-      ../..
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local  ..
 make -j 8
 ```
 
@@ -111,22 +108,23 @@ make -j 8
 
 ### SERVER
 
-```bash
-./remote_server ../../dataset/
-```
-
 - ./remote_server  <DATASET_FOLDER_PATH>
+
+```bash
+./remote_server ../dataset/
+```
 
 
 ![Untitled](images/Untitled%207.png)
 
 ### CLIENT
 
+- ./remote_client <DOWNLOAD_FOLDER_PATH>
 ```bash
-./remote_client ../../download/
+mkdir ../download
+./remote_client ../download/
 ```
     
-- ./remote_client <DOWNLOAD_FOLDER_PATH>
 - Choose number you wanna download.
     
     ![Untitled](images/Untitled%202.png)
