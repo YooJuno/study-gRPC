@@ -98,7 +98,7 @@ popd
 cd ~/grpc/examples/cpp/
 git clone https://github.com/YooJuno/study-gRPC
 cd study-gRPC
-mkdir -p cmake/build download
+mkdir -p cmake/build
 pushd cmake/build
 cmake -DCMAKE_PREFIX_PATH=$MY_INSTALL_DIR ../../
 make -j8
