@@ -36,21 +36,21 @@ int main()
         cerr << "Could not open or find the image!" << endl;
         return -1;
     }
-    cout << "Width : " << img.size().width << endl;
-    cout << "Height : " << img.size().height << endl;
-    cout << "Channels : " << img.channels() << endl;
-    cout << "Type : " << img.type() << endl;
+    // cout << "Width : " << img.size().width << endl;
+    // cout << "Height : " << img.size().height << endl;
+    // cout << "Channels : " << img.channels() << endl;
+    // cout << "Type : " << img.type() << endl;
 
-    practice::Mat protoImg;
-    protoImg.set_width(img.size().width);
-    protoImg.set_height(img.size().height);
-    protoImg.set_chennels(img.channels());
-    protoImg.set_type(img.type());
+    practice::Mat* protoImg;
+    protoImg->set_width(10);
+    // protoImg->set_height(img.size().height);
+    // protoImg->set_channels(img.channels());
+    // protoImg->set_type(img.type());
 
-    cout << "Width : " << protoImg.width() << endl;
-    cout << "Height : " << protoImg.height() << endl;
-    cout << "Channels : " << protoImg.channels() << endl;
-    cout << "Type : " << protoImg.type() << endl;
+    // cout << "Width : " << (int)protoImg->width() << endl;
+    // cout << "Height : " << (int)protoImg->height() << endl;
+    // cout << "Channels : " << (int)protoImg->channels() << endl;
+    // cout << "Type : " << (int)protoImg->type() << endl;
 
 
     string windowName = "Display Image";
