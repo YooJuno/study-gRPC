@@ -190,7 +190,7 @@ int main(int argc, char** argv)
 
     if(argc != 2)
     {
-        cout << "./remote_client [download path]\n";
+        cout << "./remote_client <DOWNLOAD_FOLDER_PATH>\n";
         return 0;
     }
 
