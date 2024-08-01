@@ -4,12 +4,7 @@ project(remote C CXX)
 
 # include(../cmake/common.cmake)
 
-##################################################################################################
-##################################################################################################
-
 find_package(Threads REQUIRED)
-
-##################################################################################################
 
 option(protobuf_MODULE_COMPATIBLE TRUE)
 find_package(Protobuf CONFIG REQUIRED)
@@ -34,9 +29,6 @@ find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
 else()
 set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
 endif()
-
-##################################################################################################
-##################################################################################################
 
 # Proto file
 get_filename_component(remote_message_proto "./protos/remote_message.proto" ABSOLUTE)
