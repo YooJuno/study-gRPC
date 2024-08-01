@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.8)
 
 project(remote C CXX)
 
-# include(../cmake/common.cmake)
-
 find_package(Threads REQUIRED)
 
 option(protobuf_MODULE_COMPATIBLE TRUE)
