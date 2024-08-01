@@ -2,24 +2,35 @@ cmake_minimum_required(VERSION 3.8)
 
 project(remote C CXX)
 
-include(../cmake/common.cmake)
+find_package(Threads REQUIRED)
+
+option(protobuf_MODULE_COMPATIBLE TRUE)
+find_package(Protobuf CONFIG REQUIRED)
+message(STATUS "Using protobuf ${Protobuf_VERSION}")
+
+set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
+set(_REFLECTION gRPC::grpc++_reflection)
+if(CMAKE_CROSSCOMPILING)
+find_program(_PROTOBUF_PROTOC protoc)
+else()
+set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
+endif()
+
+# Find gRPC installation
+# Looks for gRPCConfig.cmake file installed by gRPC's cmake installation.
+find_package(gRPC CONFIG REQUIRED)
+message(STATUS "Using gRPC ${gRPC_VERSION}")
+
+set(_GRPC_GRPCPP gRPC::grpc++)
+if(CMAKE_CROSSCOMPILING)
+find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
+else()
+set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
+endif()
 
 # Proto file
 get_filename_component(remote_message_proto "./protos/remote_message.proto" ABSOLUTE)
 get_filename_component(remote_message_proto_path "${remote_message_proto}" PATH)
-
-enable_language(CXX)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Find libzip package
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBZIP REQUIRED libzip)
-
-# Include libzip directories
-include_directories(${LIBZIP_INCLUDE_DIRS})
-link_directories(${LIBZIP_LIBRARY_DIRS})
 
 # Generated sources
 set(remote_message_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/remote_message.pb.cc")
@@ -29,12 +40,13 @@ set(remote_message_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/remote_message.grpc.pb
 add_custom_command(
       OUTPUT "${remote_message_proto_srcs}" "${remote_message_proto_hdrs}" "${remote_message_grpc_srcs}" "${remote_message_grpc_hdrs}"
       COMMAND ${_PROTOBUF_PROTOC}
-      ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}"
-        --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
-        -I "${remote_message_proto_path}"
-        --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}"
-        "${remote_message_proto}"
-      DEPENDS "${remote_message_proto}")
+      ARGS  --grpc_out "${CMAKE_CURRENT_BINARY_DIR}"
+            --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
+            -I "${remote_message_proto_path}"
+            --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}"
+            "${remote_message_proto}"
+      DEPENDS "${remote_message_proto}"
+      COMMENT "Generating gRPC and Protobuf code from ${remote_message_proto}")
 
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
@@ -55,7 +67,8 @@ target_link_libraries(remote_message_grpc_proto
 foreach(_target
   remote_client remote_server)
   add_executable(${_target} "${_target}.cc")
-  target_link_libraries(${_target}
+  target_link_libraries(
+    ${_target}
     remote_message_grpc_proto
     absl::check
     absl::flags
@@ -63,6 +76,5 @@ foreach(_target
     absl::log
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
-    ${_PROTOBUF_LIBPROTOBUF}
-    ${LIBZIP_LIBRARIES})
+    ${_PROTOBUF_LIBPROTOBUF})
 endforeach()
