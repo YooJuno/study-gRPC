@@ -98,12 +98,12 @@ popd
 cd ~
 git clone https://github.com/YooJuno/study-gRPC
 cd study-gRPC
-mkdir -p cmake/build
-pushd cmake/build
+mkdir build
+cd build
 cmake -DgRPC_INSTALL=ON \
       -DgRPC_BUILD_TESTS=OFF \
       -DCMAKE_INSTALL_PREFIX=$HOME/.local \
-      ../..
+      ..
 make -j 8
 ```
 
@@ -123,6 +123,7 @@ make -j 8
 ### CLIENT
 
 ```bash
+mkdir ../download
 ./remote_client ../../download/
 ```
     
