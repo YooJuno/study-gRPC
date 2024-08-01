@@ -188,6 +188,12 @@ int main(int argc, char** argv)
 {
     absl::ParseCommandLine(argc, argv);
 
+    if(argc != 2)
+    {
+        cout << "./remote_client [download path]\n";
+        return 0;
+    }
+
     string pathOfDownloadDir(argv[1]);
     RunClient(absl::GetFlag(FLAGS_target), pathOfDownloadDir);
 

@@ -162,6 +162,13 @@ void RunServer(uint16_t port, char* pathOfDatasetDir)
 int main(int argc, char** argv) 
 {
     absl::ParseCommandLine(argc, argv);
+
+    if(argc != 2)
+    {
+        cout << "./remote_server [dataset path]\n";
+        return 0;
+    }
+
     RunServer(absl::GetFlag(FLAGS_port), argv[1]);
     
     return 0;
