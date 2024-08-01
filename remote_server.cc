@@ -17,6 +17,8 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
+#include <opencv4/opencv2/opencv.hpp>
+
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -27,6 +29,8 @@ using remote::RemoteRequest;
 using remote::File;
 using remote::FileNamesOfDataset;
 using remote::Empty;
+using remote::ProtoMat;
+using remote::Pixel;
 
 using namespace std;
 
@@ -161,6 +165,50 @@ void RunServer(uint16_t port, char* pathOfDatasetDir)
 
 int main(int argc, char** argv) 
 {
+    cv::Mat img = cv::imread("../../dataset/dog.jpeg", 1);
+    ProtoMat protoImg;
+
+    protoImg.set_width(img.size().width);
+    protoImg.set_height(img.size().height);
+    protoImg.set_channels(img.channels());
+    protoImg.set_type(img.type());
+
+    for (auto i=0 ; i<img.size().width ; i++)
+    {
+        for (auto j=0 ; j<img.size().height ; j++)
+        {
+            const cv::Vec3b& pixel = img.at<cv::Vec3b>(y, x);
+            Pixel* pixel = protoImg.add_matrix();
+
+            pixel->set_r(static_cast<uint32_t>(pixel[2]));
+            pixel->set_g(static_cast<uint32_t>(pixel[2]));
+            pixel->set_b(static_cast<uint32_t>(pixel[2]));
+        }
+    }
+
+    cout << protoImg.width() << endl;
+    cout << protoImg.height() << endl;
+    cout << protoImg.channels() << endl;
+    cout << protoImg.type() << endl;
+
+    for (const auto& p : protoImg.matrix()) 
+    {
+        cout << "Pixel - R: " << p.r();
+        cout << ", G: " << p.g();
+        cout << ", B: " << p.b() << endl;
+    }
+
+    cv::imshow("hi", img);
+
+    cv::waitKey(0);
+
+
+
+
+
+
+
+
     absl::ParseCommandLine(argc, argv);
     
     if(argc != 2)

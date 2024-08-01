@@ -4,6 +4,9 @@ project(remote C CXX)
 
 find_package(Threads REQUIRED)
 
+find_package(OpenCV REQUIRED)
+message(STATUS "Using OpenCV version ${OpenCV_VERSION}")
+
 option(protobuf_MODULE_COMPATIBLE TRUE)
 find_package(Protobuf CONFIG REQUIRED)
 message(STATUS "Using protobuf ${Protobuf_VERSION}")
@@ -76,5 +79,6 @@ foreach(_target
     absl::log
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
-    ${_PROTOBUF_LIBPROTOBUF})
+    ${_PROTOBUF_LIBPROTOBUF}
+    ${OpenCV_LIBS})
 endforeach()

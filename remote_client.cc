@@ -11,6 +11,8 @@
 #include <vector>
 #include <fstream> 
 
+#include <opencv4/opencv2/opencv.hpp>
+
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
@@ -22,6 +24,7 @@ using remote::Header;
 using remote::Data;
 using remote::FileNamesOfDataset;
 using remote::Empty;
+using remote::ProtoMat;
 
 using namespace std;
 
