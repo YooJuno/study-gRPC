@@ -49,7 +49,7 @@ message File
 {
     Header header = 1;
     Data data = 2;
-    ProtoMat matdata = 3;
+    ProtoMat img = 3;
     bool success = 4;
 }
 

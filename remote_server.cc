@@ -93,26 +93,51 @@ public:
 
     Status DownloadFile(ServerContext* context, const RemoteRequest* request, File* reply) override 
     {
-        ifstream ifs;
         string targetName(request->name());
 
-        ifs.open(_pathOfDatasetDir + targetName, ios::binary);
+        // ifs.open(_pathOfDatasetDir + targetName, ios::binary);
 
-        if (!ifs)
-        {
-            cout << "failed to open file\n";
-            reply->set_success(false);
+        // if (!ifs)
+        // {
+        //     cout << "failed to open file\n";
+        //     reply->set_success(false);
             
-            return Status::OK;
-        }
-        _buffer.assign((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
+        //     return Status::OK;
+        // }
+        // _buffer.assign((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
     
-        ifs.close();
+        // ifs.close();
 
-        reply->mutable_header()->set_name(targetName);
-        reply->mutable_header()->set_size(_buffer.length());
-        reply->mutable_header()->set_date(DirTools::GetCreationTimeOfFile(_pathOfDatasetDir + targetName)); 
-        reply->mutable_data()->set_buffer(_buffer);
+        // reply->mutable_header()->set_name(targetName);
+        // reply->mutable_header()->set_size(_buffer.length());
+        // reply->mutable_header()->set_date(DirTools::GetCreationTimeOfFile(_pathOfDatasetDir + targetName)); 
+        // reply->mutable_data()->set_buffer(_buffer);
+
+        cv::Mat img = cv::imread("../../dataset/dog.jpeg", 1);
+        ProtoMat protoImg;
+
+        reply->mutable_img().set_width(img.size().width);
+        reply->mutable_img().set_height(img.size().height);
+        reply->mutable_img().set_channels(img.channels());
+        reply->mutable_img().set_type(img.type());
+
+        for (auto i=0 ; i<img.size().width ; i++)
+        {
+            for (auto j=0 ; j<img.size().height ; j++)
+            {
+                const cv::Vec3b& pixel = img.at<cv::Vec3b>(j, i);
+                Pixel* pixel = protoImg.add_matrix();
+
+                pixel->set_r(static_cast<uint32_t>(pixel[2]));
+                pixel->set_g(static_cast<uint32_t>(pixel[2]));
+                pixel->set_b(static_cast<uint32_t>(pixel[2]));
+            }
+        }
+
+        cout << reply->img().width() << endl;
+        cout << reply->mutable_img().height() << endl;
+        cout << reply->mutable_img().channels() << endl;
+        cout << reply->mutable_img().type() << endl;
 
         return Status::OK;
     }
@@ -165,50 +190,6 @@ void RunServer(uint16_t port, char* pathOfDatasetDir)
 
 int main(int argc, char** argv) 
 {
-    cv::Mat img = cv::imread("../../dataset/dog.jpeg", 1);
-    ProtoMat protoImg;
-
-    protoImg.set_width(img.size().width);
-    protoImg.set_height(img.size().height);
-    protoImg.set_channels(img.channels());
-    protoImg.set_type(img.type());
-
-    for (auto i=0 ; i<img.size().width ; i++)
-    {
-        for (auto j=0 ; j<img.size().height ; j++)
-        {
-            const cv::Vec3b& pixel = img.at<cv::Vec3b>(y, x);
-            Pixel* pixel = protoImg.add_matrix();
-
-            pixel->set_r(static_cast<uint32_t>(pixel[2]));
-            pixel->set_g(static_cast<uint32_t>(pixel[2]));
-            pixel->set_b(static_cast<uint32_t>(pixel[2]));
-        }
-    }
-
-    cout << protoImg.width() << endl;
-    cout << protoImg.height() << endl;
-    cout << protoImg.channels() << endl;
-    cout << protoImg.type() << endl;
-
-    for (const auto& p : protoImg.matrix()) 
-    {
-        cout << "Pixel - R: " << p.r();
-        cout << ", G: " << p.g();
-        cout << ", B: " << p.b() << endl;
-    }
-
-    cv::imshow("hi", img);
-
-    cv::waitKey(0);
-
-
-
-
-
-
-
-
     absl::ParseCommandLine(argc, argv);
     
     if(argc != 2)
