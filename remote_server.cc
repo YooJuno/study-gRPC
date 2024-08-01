@@ -165,7 +165,7 @@ int main(int argc, char** argv)
     
     if(argc != 2)
     {
-        cout << "./remote_server [dataset path]\n";
+        cout << "./remote_server <DATASET_FOLDER_PATH>\n";
         return 0;
     }
     

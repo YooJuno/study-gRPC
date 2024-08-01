@@ -95,13 +95,16 @@ popd
 ### Clone and Build this Repository
 
 ```bash
-cd ~/grpc/examples/cpp/
+cd ~
 git clone https://github.com/YooJuno/study-gRPC
 cd study-gRPC
-mkdir -p cmake/build download
+mkdir -p cmake/build
 pushd cmake/build
-cmake -DCMAKE_PREFIX_PATH=$MY_INSTALL_DIR ../../
-make -j8
+cmake -DgRPC_INSTALL=ON \
+      -DgRPC_BUILD_TESTS=OFF \
+      -DCMAKE_INSTALL_PREFIX=$HOME/.local \
+      ../..
+make -j 8
 ```
 
 ## **Try it!**
@@ -109,10 +112,10 @@ make -j8
 ### SERVER
 
 ```bash
-./remote_serv ../../dataset
+./remote_server ../../dataset/
 ```
 
-- ./remote_serv  <DATASET_FOLDER_PATH>
+- ./remote_server  <DATASET_FOLDER_PATH>
 
 
 ![Untitled](images/Untitled%207.png)
@@ -120,7 +123,7 @@ make -j8
 ### CLIENT
 
 ```bash
-./remote_client ../../download
+./remote_client ../../download/
 ```
     
 - ./remote_client <DOWNLOAD_FOLDER_PATH>
