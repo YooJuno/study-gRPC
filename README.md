@@ -111,23 +111,23 @@ make -j 8
 
 ### SERVER
 
+- ./remote_server  <DATASET_FOLDER_PATH>
+
 ```bash
 ./remote_server ../dataset/
 ```
-
-- ./remote_server  <DATASET_FOLDER_PATH>
 
 
 ![Untitled](images/Untitled%207.png)
 
 ### CLIENT
 
+- ./remote_client <DOWNLOAD_FOLDER_PATH>
 ```bash
 mkdir ../download
 ./remote_client ../download/
 ```
     
-- ./remote_client <DOWNLOAD_FOLDER_PATH>
 - Choose number you wanna download.
     
     ![Untitled](images/Untitled%202.png)
