@@ -6,23 +6,20 @@
 #include <grpcpp/grpcpp.h>
 
 #include <iostream>
-#include <memory>
 #include <string>
-#include <vector>
-#include <fstream> 
-
 #include <opencv4/opencv2/opencv.hpp>
+
+// #include "media_handler.h"
+
+#define COLOR 3
+#define GRAY 1
 
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
 using remote::RemoteCommunication;
-using remote::RemoteRequest;
-using remote::File;
-using remote::Header;
-using remote::Data;
-using remote::FileNamesOfDataset;
+
 using remote::Empty;
 using remote::ProtoMat;
 
@@ -30,161 +27,157 @@ using namespace std;
 
 ABSL_FLAG(string, target, "localhost:50051", "Server address");
 
-class InputAndOutput
+class MediaHandler
 {
 public:
-    static void PrintHeader(const Header& file)
+    static auto ConvertProtomatToMat(const ProtoMat& protomat) -> cv::Mat
     {
-        const google::protobuf::Descriptor* descriptor = file.GetDescriptor();
-        const google::protobuf::Reflection* reflection = file.GetReflection();
+        cv::Mat img = cv::Mat(cv::Size(protomat.width(), protomat.height()), 
+                                protomat.type());
+        string serializedMatrix(protomat.buffer());
+        int idx = 0;
 
-        cout << "\n***** [File info] *****\n";
-        for (auto i=0; i<descriptor->field_count(); i++) 
+        /*
+        [질문]
+        if문을 바깥으로 꺼내두면 채널 확인을 한 번만 하면 된다
+        하지만 코드의 간결함을 위해 nested for loop 안으로 넣으면 
+        width * height 만큼 해줘야 한다. 어떤 것을 선택해야 하는가?
+        */
+        if (protomat.channels() == GRAY)
         {
-            const google::protobuf::FieldDescriptor* field = descriptor->field(i);
-            cout << field->name() << " : ";
-
-            if (field->type() == google::protobuf::FieldDescriptor::TYPE_INT32) 
-                cout << reflection->GetInt32(file, field) << endl;
-            else if (field->type() == google::protobuf::FieldDescriptor::TYPE_STRING) 
-                cout << reflection->GetString(file, field) << endl;
-            else if (field->type() == google::protobuf::FieldDescriptor::TYPE_BOOL) 
-                cout << std::boolalpha << reflection->GetBool(file, field) << endl;
-            else 
-                cout << "Unknown" << endl;
+            for (auto i=0 ; i<img.size().height ; i++)
+            {
+                for (auto j=0 ; j<img.size().width ; j++)
+                {  
+                    img.at<uchar>(i, j) = serializedMatrix[idx++];
+                }
+            }
         }
+        /*
+        [질문]
+        else를 쓰면 코드가 간결해지지만 COLOR인지에 대한 직접적인 명시가 없기 때문에
+        직관적이지 않다
+        else if (f.channels() == COLOR)
+        */
+        else
+        {
+            for (auto i=0 ; i<img.size().height ; i++)
+            {
+                for (auto j=0 ; j<img.size().width ; j++)
+                {  
+                    img.at<cv::Vec3b>(i, j)[0] = serializedMatrix[idx++];
+                    img.at<cv::Vec3b>(i, j)[1] = serializedMatrix[idx++];
+                    img.at<cv::Vec3b>(i, j)[2] = serializedMatrix[idx++];
+                }
+            }
+        }
+
+        return img;
     }
 
-    static void PrintFileNames(vector<string> fileNames)
+    static auto ConvertMatToProtomat(const cv::Mat& image) -> ProtoMat
     {
-        int idx;
-    
-        cout << "\n**** [List] ****\n";
-        for (idx = 0; idx < fileNames.size(); idx++)
-            cout << "[" << idx+1 << "] " << fileNames[idx] << endl;
-        cout << "[" << idx+1 << "] nothing to download(quit)" << endl;
-    }
+        ProtoMat result;
+        string buffer("");
+        
+        result.set_width(image.size().width);
+        result.set_height(image.size().height);
+        result.set_channels(image.channels());
+        result.set_type(image.type());
+        result.set_seq(result.seq() + 1);
+        
+        if (image.channels() == GRAY)
+        {
+            for (auto i=0 ; i<image.size().height ; i++)
+            {
+                for (auto j=0 ; j<image.size().width ; j++)
+                {
+                    buffer += static_cast<uchar>(image.at<uchar>(i, j));
+                }
+            }
+        }
+        else if (image.channels() == COLOR)
+        {
+            for (auto i=0 ; i<image.size().height ; i++)
+            {
+                for (auto j=0 ; j<image.size().width ; j++)
+                {               
+                    const cv::Vec3b& pixel = image.at<cv::Vec3b>(i, j);
 
-    static auto SelectFileNameFrom(vector<string> fileNames) -> string 
-    {   
-        int inputNum;
-        cout << "Select you wanna download\n: " ;
-        cin >> inputNum;
+                    buffer += static_cast<uchar>(pixel[0]); // B
+                    buffer += static_cast<uchar>(pixel[1]); // G
+                    buffer += static_cast<uchar>(pixel[2]); // R
+                }
+            }
+        }
 
-        return fileNames[inputNum-1];
+        result.set_buffer(buffer); 
+        
+        return result;
     }
 };
 
-class Downloader 
+class Downloader : public MediaHandler
 {
 public:
     Downloader(shared_ptr<Channel> channel)
         : _stub (RemoteCommunication::NewStub(channel)) {}
 
-    auto GetFileNamesInDataset() -> vector<string> 
-    {   
-        vector<string> result;
-        ClientContext context;
-        Empty request;
-        FileNamesOfDataset reply;
-
-        Status status = _stub->GetFileNamesInDataset(&context, request, &reply);
-
-        if (status.ok())
-            for(const auto& i : reply.filenames())
-                result.push_back(i);
-        else
-            result.push_back("error");
-        
-        return result;
-    }
-
-    auto DownloadFile(const string& fileName) -> File
+    auto RemoteProcessImage (cv::Mat image) -> cv::Mat
     {
+        ProtoMat request, reply;
         ClientContext context;
-        RemoteRequest request;
-        File reply;
-        string queue("");
 
-        request.set_name(fileName);
+        request = ConvertMatToProtomat(image);
 
-        Status status = _stub->DownloadFile(&context, request, &reply); 
+        Status status = _stub->RemoteProcessImage(&context, request, &reply);
 
         if (!status.ok())
-        {
-            reply.set_success(false);
-
-            return reply;
+        {   
+            cout << "process error\n";
+            exit(1);
         }
 
-        if(reply.header().name() != "" && reply.header().size() != 0 && reply.header().date() != "")
-            reply.mutable_header()->set_success(true);
-
-        if(reply.data().buffer() != "")
-            reply.mutable_data()->set_success(true);
-
-        reply.set_success(reply.header().success() && reply.data().success());
-
-        return reply;
-    }
-
-    void SaveReplyTo(const string& pathOfDownloadDir, const File f)
-    {
-        string buffer = f.data().buffer();
-        string f_name = f.header().name();
-        
-        ofstream ofs;
-
-        if (pathOfDownloadDir[pathOfDownloadDir.length()-1] != '/')
-            ofs.open(pathOfDownloadDir + '/' + f_name, ios::out | ios::binary);
-        else
-            ofs.open(pathOfDownloadDir + f_name, ios::out | ios::binary);
-
-        ofs.write(buffer.c_str(), buffer.length());  
-                 
-        ofs.close();
+        return ConvertProtomatToMat(reply);
     }
 
 private:
     unique_ptr<RemoteCommunication::Stub> _stub;
 };
 
-void RunClient(string targetStr, string pathOfDownloadDir)
+void RunClient(string targetStr, string videoPath)
 {
+    MediaHandler mediaHandler;
+    ProtoMat protoMat;
+
     grpc::ChannelArguments args;
     args.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
     args.SetMaxSendMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
-
     Downloader service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
 
-    File file;
-    bool isDownloaded = false;
+    cv::VideoCapture cap(videoPath);
+    int fps = cap.get(cv::CAP_PROP_FPS);
 
-    for (auto cnt=0; cnt<3 && !isDownloaded; cnt++)
+    cout << fps << endl;
+    cv::Mat frame;
+    cv::Mat processedFrame;
+    int sequenceNum = 0;
+    while(cap.read(frame))
     {
-        auto fileNames = service.GetFileNamesInDataset();
-        
-        if (fileNames[0] == "error")
+        processedFrame = service.RemoteProcessImage(frame);
+
+        cv::imshow("processed video", processedFrame);
+
+        if(sequenceNum%fps==0)
         {
-            cout << "The server connection terminated abnormally.\n";
-
-            return ;
+            string imagePath = "../../processed/Image_" + to_string(sequenceNum) + ".jpeg";
+            cv::imwrite(imagePath.c_str(), processedFrame);
+            cout << "Sequence Num : " << sequenceNum << endl;
         }
-
-        InputAndOutput::PrintFileNames(fileNames);
-
-        auto fileName = InputAndOutput::SelectFileNameFrom(fileNames);
-
-        file = service.DownloadFile(fileName);
-
-        isDownloaded = file.success();
-        if (!isDownloaded)
-            cout << "Can't download [" << fileName << "]. Please retry.\n\n";
+        sequenceNum++;
+        if (cv::waitKey(1000/fps) == 27) 
+            break;
     }
-    
-    InputAndOutput::PrintHeader(file.header());
-
-    service.SaveReplyTo(pathOfDownloadDir, file);
 }
 
 int main(int argc, char** argv)  
@@ -193,12 +186,13 @@ int main(int argc, char** argv)
 
     if(argc != 2)
     {
-        cout << "./remote_client <DOWNLOAD_FOLDER_PATH>\n";
+        cout << "./remote_client <VIDEO_PATH>\n";
         return 0;
     }
 
-    string pathOfDownloadDir(argv[1]);
-    RunClient(absl::GetFlag(FLAGS_target), pathOfDownloadDir);
+    string videoPath(argv[1]);
+
+    RunClient(absl::GetFlag(FLAGS_target), videoPath);
 
     return 0;
 }

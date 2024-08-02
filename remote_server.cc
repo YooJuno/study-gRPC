@@ -9,15 +9,14 @@
 #include <grpcpp/health_check_service_interface.h>
 
 #include <iostream>
-#include <memory>
 #include <string>
-#include <vector>
-#include <fstream> 
-#include <ctime>
-#include <sys/stat.h>
-#include <dirent.h>
-
+#include <random>
 #include <opencv4/opencv2/opencv.hpp>
+
+// #include "media_handler.h"
+
+#define COLOR 3
+#define GRAY 1
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -25,127 +24,124 @@ using grpc::ServerContext;
 using grpc::Status;
 
 using remote::RemoteCommunication;
-using remote::RemoteRequest;
-using remote::File;
-using remote::FileNamesOfDataset;
 using remote::Empty;
 using remote::ProtoMat;
-using remote::Pixel;
 
 using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-class DirTools
+class MediaHandler
 {
 public:
-    static auto GetFileNamesFrom(DIR* dir) -> vector<string>
+    static auto ConvertProtomatToMat(const ProtoMat& protomat) -> cv::Mat
     {
-        vector<string> result;
-        struct dirent* entry;
+        cv::Mat img = cv::Mat(cv::Size(protomat.width(), protomat.height()), 
+                                protomat.type());
+        string serializedMatrix(protomat.buffer());
+        int idx = 0;
 
-        while ((entry = readdir(dir)))
+        /*
+        [질문]
+        if문을 바깥으로 꺼내두면 채널 확인을 한 번만 하면 된다
+        하지만 코드의 간결함을 위해 nested for loop 안으로 넣으면 
+        width * height 만큼 해줘야 한다. 어떤 것을 선택해야 하는가?
+        */
+        if (protomat.channels() == GRAY)
         {
-            string name = entry->d_name;
-            if (name == "." || name == "..") 
-                continue;
-
-            result.push_back(name);
+            for (auto i=0 ; i<img.size().height ; i++)
+            {
+                for (auto j=0 ; j<img.size().width ; j++)
+                {  
+                    img.at<uchar>(i, j) = serializedMatrix[idx++];
+                }
+            }
+        }
+        /*
+        [질문]
+        else를 쓰면 코드가 간결해지지만 COLOR인지에 대한 직접적인 명시가 없기 때문에
+        직관적이지 않다
+        else if (f.channels() == COLOR)
+        */
+        else
+        {
+            for (auto i=0 ; i<img.size().height ; i++)
+            {
+                for (auto j=0 ; j<img.size().width ; j++)
+                {  
+                    img.at<cv::Vec3b>(i, j)[0] = serializedMatrix[idx++];
+                    img.at<cv::Vec3b>(i, j)[1] = serializedMatrix[idx++];
+                    img.at<cv::Vec3b>(i, j)[2] = serializedMatrix[idx++];
+                }
+            }
         }
 
-        rewinddir(dir);
-
-        return result;
+        return img;
     }
-
-    static auto GetCreationTimeOfFile(const string& path) -> string
+    
+    static auto ConvertMatToProtomat(const cv::Mat& image) -> ProtoMat
     {
-        struct stat attr;
-
-        if (stat(path.c_str(), &attr) == 0) 
-        {
-            string creationTimeOfFile = ctime(&attr.st_ctime);
-            *(creationTimeOfFile.end() - 1) = '\0';
-
-            return creationTimeOfFile;
-        }
+        ProtoMat result;
+        string buffer("");
         
-        return NULL;
+        result.set_width(image.size().width);
+        result.set_height(image.size().height);
+        result.set_channels(image.channels());
+        result.set_type(image.type());
+        result.set_seq(result.seq() + 1);
+        
+        if (image.channels() == GRAY)
+        {
+            for (auto i=0 ; i<image.size().height ; i++)
+            {
+                for (auto j=0 ; j<image.size().width ; j++)
+                {
+                    buffer += static_cast<uchar>(image.at<uchar>(i, j));
+                }
+            }
+        }
+        else if (image.channels() == COLOR)
+        {
+            for (auto i=0 ; i<image.size().height ; i++)
+            {
+                for (auto j=0 ; j<image.size().width ; j++)
+                {               
+                    const cv::Vec3b& pixel = image.at<cv::Vec3b>(i, j);
+
+                    buffer += static_cast<uchar>(pixel[0]); // B
+                    buffer += static_cast<uchar>(pixel[1]); // G
+                    buffer += static_cast<uchar>(pixel[2]); // R
+                }
+            }
+        }
+
+        result.set_buffer(buffer); 
+        
+        return result;
     }
 };
 
 class Uploader final : public RemoteCommunication::Service 
 {
 public:
-    Uploader(DIR* dir, const string& pathOfDatasetDir)
-    : _dir(dir), _pathOfDatasetDir(pathOfDatasetDir)
-    {}
-
-    Status GetFileNamesInDataset(ServerContext* context, const Empty* request, FileNamesOfDataset* reply) override 
+    Status RemoteProcessImage(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
     {
-        auto fileNames = DirTools::GetFileNamesFrom(_dir);
-        
-        for (const auto& i : fileNames)
-            reply->add_filenames(i);
+        cv::Mat image = MediaHandler::ConvertProtomatToMat(*request);
+
+        random_device rd;
+        mt19937 gen(rd());
+        uniform_int_distribution<int> dis(0, 255);
+
+        cv::circle( /* Image */ image, 
+                    /* Center */ cv::Point(image.cols/2, image.rows/2), 
+                    /* Radius */ 50, 
+                    /* Color */ cv::Scalar(dis(gen), dis(gen), dis(gen)), 
+                    /* Thickness */ 3); 
+
+        *reply = MediaHandler::ConvertMatToProtomat(image);
 
         return Status::OK;
     }
-
-    Status DownloadFile(ServerContext* context, const RemoteRequest* request, File* reply) override 
-    {
-        string targetName(request->name());
-
-        // ifs.open(_pathOfDatasetDir + targetName, ios::binary);
-
-        // if (!ifs)
-        // {
-        //     cout << "failed to open file\n";
-        //     reply->set_success(false);
-            
-        //     return Status::OK;
-        // }
-        // _buffer.assign((istreambuf_iterator<char>(ifs)), istreambuf_iterator<char>());
-    
-        // ifs.close();
-
-        // reply->mutable_header()->set_name(targetName);
-        // reply->mutable_header()->set_size(_buffer.length());
-        // reply->mutable_header()->set_date(DirTools::GetCreationTimeOfFile(_pathOfDatasetDir + targetName)); 
-        // reply->mutable_data()->set_buffer(_buffer);
-
-        cv::Mat img = cv::imread("../../dataset/dog.jpeg", 1);
-        ProtoMat protoImg;
-
-        reply->mutable_img().set_width(img.size().width);
-        reply->mutable_img().set_height(img.size().height);
-        reply->mutable_img().set_channels(img.channels());
-        reply->mutable_img().set_type(img.type());
-
-        for (auto i=0 ; i<img.size().width ; i++)
-        {
-            for (auto j=0 ; j<img.size().height ; j++)
-            {
-                const cv::Vec3b& pixel = img.at<cv::Vec3b>(j, i);
-                Pixel* pixel = protoImg.add_matrix();
-
-                pixel->set_r(static_cast<uint32_t>(pixel[2]));
-                pixel->set_g(static_cast<uint32_t>(pixel[2]));
-                pixel->set_b(static_cast<uint32_t>(pixel[2]));
-            }
-        }
-
-        cout << reply->img().width() << endl;
-        cout << reply->mutable_img().height() << endl;
-        cout << reply->mutable_img().channels() << endl;
-        cout << reply->mutable_img().type() << endl;
-
-        return Status::OK;
-    }
-
-private:
-    string _pathOfDatasetDir;
-    DIR* _dir;
-    string _buffer;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -156,21 +152,14 @@ private:
 //   but *builder.SetMax...Size* codes are                          //
 //   generated by juno                                              //
 //////////////////////////////////////////////////////////////////////
-void RunServer(uint16_t port, char* pathOfDatasetDir) 
+void RunServer(uint16_t port) 
 {
     string serverAddress = absl::StrFormat("0.0.0.0:%d", port);
 
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
 
-    DIR* dir = opendir(pathOfDatasetDir);
-    if (!dir)
-    {
-        cout << "Can't open directory.\n\n";\
-
-        return;
-    }
-    Uploader service(dir, pathOfDatasetDir);
+    Uploader service;
 
     ServerBuilder builder;
 
@@ -192,13 +181,7 @@ int main(int argc, char** argv)
 {
     absl::ParseCommandLine(argc, argv);
     
-    if(argc != 2)
-    {
-        cout << "./remote_server <DATASET_FOLDER_PATH>\n";
-        return 0;
-    }
-    
-    RunServer(absl::GetFlag(FLAGS_port), argv[1]);
+    RunServer(absl::GetFlag(FLAGS_port));
     
     return 0;
 }
