@@ -4,62 +4,19 @@ package remote;
 
 service RemoteCommunication
 {
-    rpc DownloadFile (RemoteRequest) returns (File) {}
-    rpc GetFileNamesInDataset (Empty) returns (FileNamesOfDataset) {}
+    rpc RemoteProcessImage (ProtoMat) returns (ProtoMat) {}
 }
 
 message Empty {}
 
-message Pixel 
-{
-    uint32 r = 1;
-    uint32 g = 2;
-    uint32 b = 3;
-}
-
 message ProtoMat 
 {
-    uint32 width = 1;
-    uint32 height = 2;
-    uint32 channels = 3;
-    uint32 type = 4; //CV_32FC2
-    repeated Pixel matrix = 5; 
-}
-
-message RemoteRequest
-{
     string name = 1;
-}
-
-message Data
-{
-    bytes buffer = 1;
-    bool success = 2;
-}
-
-message Header
-{
-    string name = 1;
-    int32 size = 2;  
-    string date = 3;
-    bool success = 4;
-}
-
-message File
-{
-    Header header = 1;
-    Data data = 2;
-    ProtoMat img = 3;
-    bool success = 4;
-}
-
-message FileList
-{
-    string name = 1;
-    bool isdir = 2;
-}
-
-message FileNamesOfDataset
-{
-    repeated string filenames = 1;
+    uint32 width = 2;
+    uint32 height = 3;
+    uint32 channels = 4;
+    uint32 type = 5;
+    bytes buffer = 6;
+    uint32 seq = 7;
+    bool success = 8;
 }
