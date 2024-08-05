@@ -34,7 +34,7 @@ class Uploader final : public RemoteCommunication::Service, public MediaHandler,
 {
 public:
     Uploader()
-    // : _yolo()
+    
     { }
     Status RemoteProcessImageWithRect(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
     {
