@@ -15,9 +15,7 @@
 #include <fstream>
 
 #include "media_handler.h"
-
-#define COLOR 3
-#define GRAY 1
+#include "yolov4.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -25,106 +23,19 @@ using grpc::ServerContext;
 using grpc::Status;
 
 using remote::RemoteCommunication;
-using remote::Empty;
 using remote::ProtoMat;
 
 using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-/*
 
-[Reference link] https://github.com/improvess/yOLOv4-opencv-cpp-python
-
-The contents of YOLOv4 class are references from above link
-
-*/
-class YOLOv4
+class Uploader final : public RemoteCommunication::Service, public MediaHandler, public YOLOv4
 {
 public:
-    YOLOv4() 
-    {
-        yoloVersion.assign("v4-tiny");
-        yoloFolderPath.assign("../../yolov4/");
-        colors = {cv::Scalar(255, 255, 0), cv::Scalar(0, 255, 0), cv::Scalar(0, 255, 255), cv::Scalar(255, 0, 0)};
-        net = LoadNet(false); // if use cuda : true
-        model = std::make_unique<cv::dnn::DetectionModel>(net);
-        model->setInputParams(1./255, cv::Size(416, 416), cv::Scalar(), true);   
-        classList = LoadClassList();
-    }
-
-    auto LoadClassList() -> vector<std::string>
-    {
-        std::vector<std::string> classList;
-        std::ifstream ifs(yoloFolderPath + "classes.txt");
-        std::string line;
-        
-        while (getline(ifs, line))
-            classList.push_back(line);
-        
-        return classList;
-    }
-
-    auto LoadNet(bool is_cuda) -> cv::dnn::Net
-    {
-        auto result = cv::dnn::readNetFromDarknet(yoloFolderPath +  + "yolo" + yoloVersion + ".cfg", yoloFolderPath +  + "yolo" + yoloVersion + ".weights");
-
-        if (is_cuda) 
-        {
-            std::cout << "Attempty to use CUDA\n";
-            result.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
-            result.setPreferableTarget(cv::dnn::DNN_TARGET_CUDA_FP16);
-        } 
-        else 
-        {
-            std::cout << "Running on CPU\n";
-            result.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
-            result.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
-        }
-
-        return result;
-    }
-
-    auto DetectObject(cv::Mat frame) -> cv::Mat
-    {       
-        std::vector<int> classIds;
-        std::vector<float> confidences;
-        std::vector<cv::Rect> boxes;
-        model->detect(frame, classIds, confidences, boxes, .2, .4);
-
-        int detections = classIds.size();
-
-        for (auto i = 0; i < detections; ++i) 
-        {
-            auto box = boxes[i];
-            auto classId = classIds[i];
-            const auto color = colors[classId % colors.size()];
-
-            cv::rectangle(frame, box, color, 1);
-            cv::rectangle(frame, cv::Point(box.x, box.y - 20), cv::Point(box.x + box.width, box.y), color, cv::FILLED);
-
-            cv::putText(frame, classList[classId].c_str(), cv::Point(box.x, box.y - 5), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
-        }
-
-        return frame;
-    }
-
-private:
-    vector<cv::Scalar> colors;
-    string yoloVersion;
-    string yoloFolderPath;
-    cv::dnn::Net net;
-    unique_ptr<cv::dnn::DetectionModel> model;
-    vector<std::string> classList;
-};
-
-class Uploader final : public RemoteCommunication::Service , public MediaHandler
-{
-
-public:
-    Uploader() : _yolo()
-    {}
-
+    Uploader()
+    // : _yolo()
+    { }
     Status RemoteProcessImageWithRect(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
     {
         cv::Mat frame = ConvertProtomatToMat(*request);
@@ -163,20 +74,16 @@ private:
 //////////////////////////////////////////////////////////////////////
 void RunServer(uint16_t port) 
 {
+    Uploader service;
+    ServerBuilder builder;
     string serverAddress = absl::StrFormat("0.0.0.0:%d", port);
 
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
 
-    Uploader service;
-
-    ServerBuilder builder;
-
     builder.SetMaxSendMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
     builder.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
-
     builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
-
     builder.RegisterService(&service);
     
     unique_ptr<Server> server(builder.BuildAndStart());

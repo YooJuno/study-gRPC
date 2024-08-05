@@ -11,16 +11,11 @@
 
 #include "media_handler.h"
 
-#define COLOR 3
-#define GRAY 1
-
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
 using remote::RemoteCommunication;
-
-using remote::Empty;
 using remote::ProtoMat;
 
 using namespace std;
@@ -66,24 +61,24 @@ void RunClient(string targetStr, string videoPath, int job)
     grpc::ChannelArguments args;
     args.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
     args.SetMaxSendMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
+
     Downloader service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
 
     cv::VideoCapture cap(videoPath);
     int fps = cap.get(cv::CAP_PROP_FPS);
-
-    cout << fps << endl;
-    cv::Mat frame;
-    cv::Mat processedFrame;
     int sequenceNum = 0;
+
+    cv::Mat frame, processedFrame;
+
     while(cap.read(frame))
     {
         processedFrame = service.RemoteProcessImage(frame, job);
 
         cv::imshow("processed video", processedFrame);
 
-        if(sequenceNum%fps==0)
+        if (sequenceNum%fps==0)
         {
-            string imagePath = "../../processed/Image_" + to_string(sequenceNum) + ".jpeg";
+            string imagePath = "../../result/Image_" + to_string(sequenceNum) + ".jpeg";
             cv::imwrite(imagePath.c_str(), processedFrame);
         }
 
@@ -98,9 +93,9 @@ int main(int argc, char** argv)
 {
     absl::ParseCommandLine(argc, argv);
 
-    if(argc != 3)
+    if (argc != 3)
     {
-        cout << argv[0] << "  <VIDEO_PATH>  <RECT:0, YOLO:1>\n";
+        cout << argv[0] << "   <VIDEO_PATH>   <Circle:0, YOLO:1>\n";
         return 0;
     }
 
