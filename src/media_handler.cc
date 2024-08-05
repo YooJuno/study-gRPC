@@ -15,11 +15,11 @@ auto MediaHandler::ConvertProtomatToMat(const ProtoMat& protomat) -> cv::Mat
     string serializedMatrix(protomat.buffer());
     int idx = 0;
 
-    for (auto row=0 ; row<img.size().height ; row++)
+    for (auto row=0 ; row<img.rows ; row++)
     {
         uchar* pointer_row = img.ptr<uchar>(row); 
 
-        for (auto col=0 ; col<img.size().width ; col++)
+        for (auto col=0 ; col<img.cols ; col++)
         {  
             if (protomat.channels() == GRAY)
             {   
