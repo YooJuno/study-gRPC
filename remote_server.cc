@@ -34,18 +34,18 @@ ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
 /*
 
-[Reference] https://github.com/improvess/yolov4-opencv-cpp-python
+[Reference] https://github.com/improvess/yOLOv4-opencv-cpp-python
 
 The contents of this class are references from above link
 
 */
-class YoloV4
+class YOLOv4
 {
 public:
-    YoloV4() 
+    YOLOv4() 
     {
         yoloVersion.assign("v4-tiny");
-        yoloFolderPath.assign("../../yolov4/");
+        yoloFolderPath.assign("../../yOLOv4/");
         colors = {cv::Scalar(255, 255, 0), cv::Scalar(0, 255, 0), cv::Scalar(0, 255, 255), cv::Scalar(255, 0, 0)};
         net = LoadNet(false); // if use cuda : true
         model = std::make_unique<cv::dnn::DetectionModel>(net);
@@ -229,7 +229,7 @@ public:
         return Status::OK;
     }
 
-    Status RemoteProcessImageWithYolo(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
+    Status RemoteProcessImageWithYOLO(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
     {
         cv::Mat frame = MediaHandler::ConvertProtomatToMat(*request);
 
@@ -239,7 +239,7 @@ public:
     }
 
 private:
-    YoloV4 _yolo;
+    YOLOv4 _yolo;
 };
 
 //////////////////////////////////////////////////////////////////////

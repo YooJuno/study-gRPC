@@ -129,7 +129,7 @@ public:
         if (job == 0)
             status = _stub->RemoteProcessImageWithRect(&context, request, &reply);
         else
-            status = _stub->RemoteProcessImageWithYolo(&context, request, &reply);
+            status = _stub->RemoteProcessImageWithYOLO(&context, request, &reply);
 
         if (!status.ok())
         {   
