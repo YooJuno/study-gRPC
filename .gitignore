@@ -5,4 +5,4 @@ cmake/
 build/
 download/
 
-processed/
+result/
