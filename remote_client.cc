@@ -38,10 +38,10 @@ public:
         int idx = 0;
 
         /*
-        [질문]
+        [질문 1]
         if문을 바깥으로 꺼내두면 채널 확인을 한 번만 하면 된다
         하지만 코드의 간결함을 위해 nested for loop 안으로 넣으면 
-        width * height 만큼 해줘야 한다. 어떤 것을 선택해야 하는가?
+        width * height 만큼 연산을 더해줘야 한다. 어떤 것을 선택해야 하는가?
         */
         if (protomat.channels() == GRAY)
         {
@@ -54,7 +54,7 @@ public:
             }
         }
         /*
-        [질문]
+        [질문 2]
         else를 쓰면 코드가 간결해지지만 COLOR인지에 대한 직접적인 명시가 없기 때문에
         직관적이지 않다
         else if (f.channels() == COLOR)
@@ -86,22 +86,17 @@ public:
         result.set_type(image.type());
         result.set_seq(result.seq() + 1);
         
-        if (image.channels() == GRAY)
+        // 극단적으로 시간 복잡도를 높였을 때의 경우.
+        for (auto i=0 ; i<image.size().height ; i++)
         {
-            for (auto i=0 ; i<image.size().height ; i++)
+            for (auto j=0 ; j<image.size().width ; j++)
             {
-                for (auto j=0 ; j<image.size().width ; j++)
-                {
+                if (image.channels() == GRAY)
+                {       
                     buffer += static_cast<uchar>(image.at<uchar>(i, j));
                 }
-            }
-        }
-        else if (image.channels() == COLOR)
-        {
-            for (auto i=0 ; i<image.size().height ; i++)
-            {
-                for (auto j=0 ; j<image.size().width ; j++)
-                {               
+                else if (image.channels() == COLOR)
+                {
                     const cv::Vec3b& pixel = image.at<cv::Vec3b>(i, j);
 
                     buffer += static_cast<uchar>(pixel[0]); // B
@@ -123,18 +118,22 @@ public:
     Downloader(shared_ptr<Channel> channel)
         : _stub (RemoteCommunication::NewStub(channel)) {}
 
-    auto RemoteProcessImage (cv::Mat image) -> cv::Mat
+    auto RemoteProcessImage (cv::Mat image, int job) -> cv::Mat
     {
         ProtoMat request, reply;
         ClientContext context;
+        Status status;
 
         request = ConvertMatToProtomat(image);
 
-        Status status = _stub->RemoteProcessImage(&context, request, &reply);
+        if (job == 0)
+            status = _stub->RemoteProcessImageWithRect(&context, request, &reply);
+        else
+            status = _stub->RemoteProcessImageWithYolo(&context, request, &reply);
 
         if (!status.ok())
         {   
-            cout << "process error\n";
+            cout << "gRPC connection is unstable\n";
             exit(1);
         }
 
@@ -145,7 +144,7 @@ private:
     unique_ptr<RemoteCommunication::Stub> _stub;
 };
 
-void RunClient(string targetStr, string videoPath)
+void RunClient(string targetStr, string videoPath, int job)
 {
     MediaHandler mediaHandler;
     ProtoMat protoMat;
@@ -164,7 +163,7 @@ void RunClient(string targetStr, string videoPath)
     int sequenceNum = 0;
     while(cap.read(frame))
     {
-        processedFrame = service.RemoteProcessImage(frame);
+        processedFrame = service.RemoteProcessImage(frame, job);
 
         cv::imshow("processed video", processedFrame);
 
@@ -172,10 +171,11 @@ void RunClient(string targetStr, string videoPath)
         {
             string imagePath = "../../processed/Image_" + to_string(sequenceNum) + ".jpeg";
             cv::imwrite(imagePath.c_str(), processedFrame);
-            cout << "Sequence Num : " << sequenceNum << endl;
         }
+
         sequenceNum++;
-        if (cv::waitKey(1000/fps) == 27) 
+
+        if (cv::waitKey(0) == 27) 
             break;
     }
 }
@@ -184,15 +184,15 @@ int main(int argc, char** argv)
 {
     absl::ParseCommandLine(argc, argv);
 
-    if(argc != 2)
+    if(argc != 3)
     {
-        cout << "./remote_client <VIDEO_PATH>\n";
+        cout << "./remote_client <VIDEO_PATH> <RECT:0, YOLO:1>\n";
         return 0;
     }
 
     string videoPath(argv[1]);
 
-    RunClient(absl::GetFlag(FLAGS_target), videoPath);
+    RunClient(absl::GetFlag(FLAGS_target), videoPath, atoi(argv[2]));
 
     return 0;
 }

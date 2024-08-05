@@ -12,6 +12,7 @@
 #include <string>
 #include <random>
 #include <opencv4/opencv2/opencv.hpp>
+#include <fstream>
 
 // #include "media_handler.h"
 
@@ -31,13 +32,98 @@ using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
+/*
+
+[Reference] https://github.com/improvess/yolov4-opencv-cpp-python
+
+The contents of this class are references from above link
+
+*/
+class YoloV4
+{
+public:
+    YoloV4() 
+    {
+        yoloVersion.assign("v4-tiny");
+        yoloFolderPath.assign("../../yolov4/");
+        colors = {cv::Scalar(255, 255, 0), cv::Scalar(0, 255, 0), cv::Scalar(0, 255, 255), cv::Scalar(255, 0, 0)};
+        net = LoadNet(false); // if use cuda : true
+        model = std::make_unique<cv::dnn::DetectionModel>(net);
+        model->setInputParams(1./255, cv::Size(416, 416), cv::Scalar(), true);   
+        classList = LoadClassList();
+    }
+
+    auto LoadClassList() -> vector<std::string>
+    {
+        std::vector<std::string> classList;
+        std::ifstream ifs(yoloFolderPath + "classes.txt");
+        std::string line;
+        
+        while (getline(ifs, line))
+            classList.push_back(line);
+        
+        return classList;
+    }
+
+    auto LoadNet(bool is_cuda) -> cv::dnn::Net
+    {
+        auto result = cv::dnn::readNetFromDarknet(yoloFolderPath +  + "yolo" + yoloVersion + ".cfg", yoloFolderPath +  + "yolo" + yoloVersion + ".weights");
+
+        if (is_cuda) 
+        {
+            std::cout << "Attempty to use CUDA\n";
+            result.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
+            result.setPreferableTarget(cv::dnn::DNN_TARGET_CUDA_FP16);
+        } 
+        else 
+        {
+            std::cout << "Running on CPU\n";
+            result.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
+            result.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+        }
+
+        return result;
+    }
+
+    auto DetectObject(cv::Mat frame) -> cv::Mat
+    {       
+        std::vector<int> classIds;
+        std::vector<float> confidences;
+        std::vector<cv::Rect> boxes;
+        model->detect(frame, classIds, confidences, boxes, .2, .4);
+
+        int detections = classIds.size();
+
+        for (auto i = 0; i < detections; ++i) 
+        {
+            auto box = boxes[i];
+            auto classId = classIds[i];
+            const auto color = colors[classId % colors.size()];
+
+            cv::rectangle(frame, box, color, 1);
+            cv::rectangle(frame, cv::Point(box.x, box.y - 20), cv::Point(box.x + box.width, box.y), color, cv::FILLED);
+
+            cv::putText(frame, classList[classId].c_str(), cv::Point(box.x, box.y - 5), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
+        }
+
+        return frame;
+    }
+
+private:
+    vector<cv::Scalar> colors;
+    string yoloVersion;
+    string yoloFolderPath;
+    cv::dnn::Net net;
+    unique_ptr<cv::dnn::DetectionModel> model;
+    vector<std::string> classList;
+};
+
 class MediaHandler
 {
 public:
     static auto ConvertProtomatToMat(const ProtoMat& protomat) -> cv::Mat
     {
-        cv::Mat img = cv::Mat(cv::Size(protomat.width(), protomat.height()), 
-                                protomat.type());
+        cv::Mat img = cv::Mat(cv::Size(protomat.width(), protomat.height()), protomat.type());
         string serializedMatrix(protomat.buffer());
         int idx = 0;
 
@@ -123,25 +209,37 @@ public:
 
 class Uploader final : public RemoteCommunication::Service 
 {
+
 public:
-    Status RemoteProcessImage(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
+    Uploader() : _yolo()
+    {}
+
+    Status RemoteProcessImageWithRect(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
     {
-        cv::Mat image = MediaHandler::ConvertProtomatToMat(*request);
+        cv::Mat frame = MediaHandler::ConvertProtomatToMat(*request);
 
         random_device rd;
         mt19937 gen(rd());
         uniform_int_distribution<int> dis(0, 255);
 
-        cv::circle( /* Image */ image, 
-                    /* Center */ cv::Point(image.cols/2, image.rows/2), 
-                    /* Radius */ 50, 
-                    /* Color */ cv::Scalar(dis(gen), dis(gen), dis(gen)), 
-                    /* Thickness */ 3); 
+        cv::circle(frame, cv::Point(frame.cols/2, frame.rows/2), 50, cv::Scalar(dis(gen), dis(gen), dis(gen)), 3); 
 
-        *reply = MediaHandler::ConvertMatToProtomat(image);
+        *reply = MediaHandler::ConvertMatToProtomat(frame);
 
         return Status::OK;
     }
+
+    Status RemoteProcessImageWithYolo(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
+    {
+        cv::Mat frame = MediaHandler::ConvertProtomatToMat(*request);
+
+        *reply = MediaHandler::ConvertMatToProtomat(_yolo.DetectObject(frame));
+
+        return Status::OK;
+    }
+
+private:
+    YoloV4 _yolo;
 };
 
 //////////////////////////////////////////////////////////////////////
