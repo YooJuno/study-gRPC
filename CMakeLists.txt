@@ -29,6 +29,9 @@ add_custom_command(
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
+# Include the directories for header files
+include_directories("${CMAKE_SOURCE_DIR}/include")
+
 # remote_message_grpc_proto
 add_library(remote_message_grpc_proto
   ${remote_message_grpc_srcs}
@@ -46,7 +49,10 @@ foreach(_target
   remote_client remote_server)
   add_executable(${_target} 
     "${_target}.cc" 
-    "media_handler.cc" "media_handler.h") 
+    "${CMAKE_SOURCE_DIR}/lib/media_handler.cc" 
+    "${CMAKE_SOURCE_DIR}/lib/yolov4.cc" 
+    "${CMAKE_SOURCE_DIR}/include/media_handler.h"
+    "${CMAKE_SOURCE_DIR}/include/yolov4.h") 
   target_link_libraries(
     ${_target}
     remote_message_grpc_proto
