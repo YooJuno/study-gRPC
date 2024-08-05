@@ -7,15 +7,15 @@
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
+#include <opencv4/opencv2/opencv.hpp>
+
+#include "media_handler.h"
+#include "yolov4.h"
 
 #include <iostream>
 #include <string>
 #include <random>
-#include <opencv4/opencv2/opencv.hpp>
 #include <fstream>
-
-#include "media_handler.h"
-#include "yolov4.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -34,8 +34,7 @@ class Uploader final : public RemoteCommunication::Service, public MediaHandler,
 {
 public:
     Uploader()
-    
-    { }
+        : _yolo(new YOLOv4()) {}
     Status RemoteProcessImageWithRect(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
     {
         cv::Mat frame = ConvertProtomatToMat(*request);
@@ -55,13 +54,13 @@ public:
     {
         cv::Mat frame = ConvertProtomatToMat(*request);
 
-        *reply = ConvertMatToProtomat(_yolo.DetectObject(frame));
+        *reply = ConvertMatToProtomat(_yolo->DetectObject(frame));
 
         return Status::OK;
     }
 
 private:
-    YOLOv4 _yolo;
+    YOLOv4* _yolo;
 };
 
 //////////////////////////////////////////////////////////////////////

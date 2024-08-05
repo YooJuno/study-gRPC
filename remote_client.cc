@@ -4,12 +4,12 @@
 #include "absl/flags/parse.h"
 
 #include <grpcpp/grpcpp.h>
-
-#include <iostream>
-#include <string>
 #include <opencv4/opencv2/opencv.hpp>
 
 #include "media_handler.h"
+
+#include <iostream>
+#include <string>
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -70,7 +70,7 @@ void RunClient(string targetStr, string videoPath, int job)
 
     cv::Mat frame, processedFrame;
 
-    while(cap.read(frame))
+    while (cap.read(frame))
     {
         processedFrame = service.RemoteProcessImage(frame, job);
 
