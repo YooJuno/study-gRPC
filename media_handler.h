@@ -1,11 +1,11 @@
-// #ifndef MEDIA_H
-// #define MEDIA_H 
+#ifndef MEDIA_H
+#define MEDIA_H 
 
-// class MediaHandler
-// {
-// public:
-//     static cv::Mat ConvertProtomatToMat(const ProtoMat& protomat) 
-//     static ProtoMat ConvertMatToProtomat(const cv::Mat& image)
-// };
+class MediaHandler
+{
+public:
+    cv::Mat ConvertProtomatToMat(const remote::ProtoMat& protomat);
+    remote::ProtoMat ConvertMatToProtomat(const cv::Mat& image);
+};
 
-// #endif
+#endif

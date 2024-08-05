@@ -44,8 +44,9 @@ target_link_libraries(remote_message_grpc_proto
 # Targets remote_[client|server]
 foreach(_target
   remote_client remote_server)
-  add_executable(${_target} "${_target}.cc")
-  # add_executable(${_target} "${_target}.cc" "media_handler.cc")  # Include media_handler.cc here
+  add_executable(${_target} 
+    "${_target}.cc" 
+    "media_handler.cc" "media_handler.h") 
   target_link_libraries(
     ${_target}
     remote_message_grpc_proto
