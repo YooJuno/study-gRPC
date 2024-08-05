@@ -45,7 +45,7 @@ public:
     YOLOv4() 
     {
         yoloVersion.assign("v4-tiny");
-        yoloFolderPath.assign("../../yOLOv4/");
+        yoloFolderPath.assign("../../yolov4/");
         colors = {cv::Scalar(255, 255, 0), cv::Scalar(0, 255, 0), cv::Scalar(0, 255, 255), cv::Scalar(255, 0, 0)};
         net = LoadNet(false); // if use cuda : true
         model = std::make_unique<cv::dnn::DetectionModel>(net);

@@ -186,7 +186,7 @@ int main(int argc, char** argv)
 
     if(argc != 3)
     {
-        cout << "./remote_client <VIDEO_PATH> <RECT:0, YOLO:1>\n";
+        cout << argv[0] << "  <VIDEO_PATH>  <RECT:0, YOLO:1>\n";
         return 0;
     }
 
