@@ -114,10 +114,12 @@ public:
             return reply;
         }
 
-        if(reply.header().name() != "" && reply.header().size() != 0 && reply.header().date() != "")
+        if (!reply.header().name().empty() && 
+            !reply.header().size() && 
+            !reply.header().date().empty())
             reply.mutable_header()->set_success(true);
 
-        if(reply.data().buffer() != "")
+        if (!reply.data().buffer().empty())
             reply.mutable_data()->set_success(true);
 
         reply.set_success(reply.header().success() && reply.data().success());
@@ -125,20 +127,11 @@ public:
         return reply;
     }
 
-    void SaveReplyTo(const string& pathOfDownloadDir, const File f)
+    void SaveReplyTo(const string& path, const File f)
     {
-        string buffer = f.data().buffer();
-        string f_name = f.header().name();
-        
-        ofstream ofs;
-
-        if (pathOfDownloadDir[pathOfDownloadDir.length()-1] != '/')
-            ofs.open(pathOfDownloadDir + '/' + f_name, ios::out | ios::binary);
-        else
-            ofs.open(pathOfDownloadDir + f_name, ios::out | ios::binary);
-
-        ofs.write(buffer.c_str(), buffer.length());  
-                 
+        string separator(*path.rbegin() == '/' ? "" : "/");   
+        ofstream ofs(path + separator + f.header().name(), ios::out | ios::binary);
+        ofs.write(f.data().buffer().c_str(), f.data().buffer().length());  
         ofs.close();
     }
 
@@ -146,7 +139,7 @@ private:
     unique_ptr<RemoteCommunication::Stub> _stub;
 };
 
-void RunClient(string targetStr, string pathOfDownloadDir)
+void RunClient(string targetStr, string downloadPath)
 {
     grpc::ChannelArguments args;
     args.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
@@ -155,9 +148,8 @@ void RunClient(string targetStr, string pathOfDownloadDir)
     Downloader service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
 
     File file;
-    bool isDownloaded = false;
 
-    for (auto cnt=0; cnt<3 && !isDownloaded; cnt++)
+    for(auto cnt=0; cnt<3; cnt++)
     {
         auto fileNames = service.GetFileNamesInDataset();
         
@@ -174,28 +166,28 @@ void RunClient(string targetStr, string pathOfDownloadDir)
 
         file = service.DownloadFile(fileName);
 
-        isDownloaded = file.success();
-        if (!isDownloaded)
+        if (!file.success())
             cout << "Can't download [" << fileName << "]. Please retry.\n\n";
     }
     
     InputAndOutput::PrintHeader(file.header());
 
-    service.SaveReplyTo(pathOfDownloadDir, file);
+    service.SaveReplyTo(downloadPath, file);
 }
 
 int main(int argc, char** argv)  
 {
     absl::ParseCommandLine(argc, argv);
 
-    if(argc != 2)
+    if (argc != 2)
     {
         cout << "./remote_client <DOWNLOAD_FOLDER_PATH>\n";
         return 0;
     }
 
-    string pathOfDownloadDir(argv[1]);
-    RunClient(absl::GetFlag(FLAGS_target), pathOfDownloadDir);
+    string downloadPath(argv[1]);
+    
+    RunClient(absl::GetFlag(FLAGS_target), downloadPath);
 
     return 0;
 }
