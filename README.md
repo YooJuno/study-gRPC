@@ -104,7 +104,7 @@ popd
 
 ```bash
 cd ~
-git clone --branch v2.2_Mat-Sync-Callback https://github.com/YooJuno/study-gRPC.git
+git clone --branch v2.2_Mat-Async-Callback https://github.com/YooJuno/study-gRPC.git
 cd study-gRPC
 mkdir build
 cd build
