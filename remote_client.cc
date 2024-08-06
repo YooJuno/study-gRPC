@@ -11,6 +11,9 @@
 #include <iostream>
 #include <string>
 
+#define CIRCLE 0
+#define YOLO 1
+
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
@@ -36,9 +39,9 @@ public:
 
         request = ConvertMatToProtomat(image);
 
-        if (job == 0)
+        if (job == CIRCLE)
             status = _stub->RemoteProcessImageWithRect(&context, request, &reply);
-        else
+        else if (job == YOLO)
             status = _stub->RemoteProcessImageWithYOLO(&context, request, &reply);
 
         if (!status.ok())
