@@ -54,15 +54,7 @@ public:
 
         return Status::OK;
     }
-
-    // Status RemoteProcessImageWithYOLO(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
-    // {
-    //     cv::Mat frame = ConvertProtomatToMat(*request);
-    //     *reply = ConvertMatToProtomat(_yolo->DetectObject(frame));
-
-    //     return Status::OK;
-    // }
-
+    
     ServerUnaryReactor* RemoteProcessImageWithYOLO(CallbackServerContext* context, const ProtoMat* request, ProtoMat* reply) override
     {
         cv::Mat frame = ConvertProtomatToMat(*request);

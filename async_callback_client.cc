@@ -38,27 +38,6 @@ public:
     ClientNode(shared_ptr<Channel> channel)
         : _stub (RemoteCommunication::NewStub(channel)) {}
 
-    // auto RemoteProcessImage (cv::Mat image, int job) -> cv::Mat
-    // {
-    //     ProtoMat request, reply;
-    //     ClientContext context;
-    //     Status status;
-
-    //     request = ConvertMatToProtomat(image);
-
-    //     if (job == CIRCLE)
-    //         status = _stub->RemoteProcessImageWithCircle(&context, request, &reply);
-    //     else if (job == YOLO)
-    //         status = _stub->RemoteProcessImageWithYOLO(&context, request, &reply);
-
-    //     if (!status.ok())
-    //     {   
-    //         cout << "gRPC connection is unstable\n";
-    //         exit(1);
-    //     }
-
-    //     return ConvertProtomatToMat(reply);
-    // }
     auto RemoteProcessImage (cv::Mat image, int job) -> cv::Mat
     {
         ProtoMat request, reply;
