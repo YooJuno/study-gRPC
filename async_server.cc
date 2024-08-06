@@ -36,9 +36,6 @@ ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 class ServerImpl final 
 {
 public:
-    ServerImpl()
-    : _yolo(new YOLOv4())  {}
-
     ~ServerImpl()
     {
         server_->Shutdown();
@@ -107,7 +104,8 @@ private:
 
                 // The actual processing.
                 cv::Mat frame = ConvertProtomatToMat(request_);
-                reply_ = ConvertMatToProtomat(_yolo->DetectObject(frame));
+                reply_ = request_;
+                // reply_ = ConvertMatToProtomat(_yolo.DetectObject(frame));
 
                 
                 // And we are done! Let the gRPC runtime know we've finished, using the
@@ -170,8 +168,6 @@ private:
     std::unique_ptr<ServerCompletionQueue> cq_;
     RemoteCommunication::AsyncService service_;
     std::unique_ptr<Server> server_;
-
-    YOLOv4* _yolo;
 };
 
 
