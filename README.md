@@ -121,7 +121,7 @@ make -j 8
 ```bash
 ./remote_server
 ```
-![alt text](image.png)    
+![alt text](images/image.png)    
 
 ### CLIENT
 
@@ -130,12 +130,12 @@ make -j 8
 mkdir ../result
 ./remote_client ../dataset/video.mp4 1
 ```
-![alt text](image-1.png)
+![alt text](images/image-1.png)
 
 
 - You can see the processed picture by server
 
-    ![alt text](image-2.png)
+    ![alt text](images/image-2.png)
 
     
 
