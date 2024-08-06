@@ -46,7 +46,7 @@ target_link_libraries(remote_message_grpc_proto
 
 # Targets remote_[client|server]
 foreach(_target
-  async_callback_client async_callback_server)
+  async_client async_server)
   add_executable(${_target} 
     "${_target}.cc" 
     "${CMAKE_SOURCE_DIR}/src/media_handler.cc" 
