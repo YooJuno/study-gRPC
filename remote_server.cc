@@ -35,7 +35,7 @@ class ServerNode final
 public:
     ServerNode()
         : _yolo(new YOLOv4()) {}
-    Status RemoteProcessImageWithRect(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
+    Status RemoteProcessImageWithCircle(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
     {
         cv::Mat frame = ConvertProtomatToMat(*request);
 
@@ -44,7 +44,6 @@ public:
         uniform_int_distribution<int> dis(0, 255);
 
         cv::circle(frame, cv::Point(frame.cols/2, frame.rows/2), 50, cv::Scalar(dis(gen), dis(gen), dis(gen)), 3); 
-
         *reply = ConvertMatToProtomat(frame);
 
         return Status::OK;
@@ -94,7 +93,6 @@ void RunServer(uint16_t port)
 int main(int argc, char** argv) 
 {
     absl::ParseCommandLine(argc, argv);
-    
     RunServer(absl::GetFlag(FLAGS_port));
     
     return 0;

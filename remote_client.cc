@@ -40,7 +40,7 @@ public:
         request = ConvertMatToProtomat(image);
 
         if (job == CIRCLE)
-            status = _stub->RemoteProcessImageWithRect(&context, request, &reply);
+            status = _stub->RemoteProcessImageWithCircle(&context, request, &reply);
         else if (job == YOLO)
             status = _stub->RemoteProcessImageWithYOLO(&context, request, &reply);
 
@@ -79,7 +79,7 @@ void RunClient(string targetStr, string videoPath, int job)
 
         cv::imshow("processed video", processedFrame);
 
-        if (sequenceNum%fps==0)
+        if (sequenceNum % fps == 0) // 1 image per 1 sec
         {
             string imagePath = "../result/Image_" + to_string(sequenceNum) + ".jpeg";
             cv::imwrite(imagePath.c_str(), processedFrame);
