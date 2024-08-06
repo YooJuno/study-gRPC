@@ -81,7 +81,7 @@ void RunClient(string targetStr, string videoPath, int job)
 
         if (sequenceNum%fps==0)
         {
-            string imagePath = "../../result/Image_" + to_string(sequenceNum) + ".jpeg";
+            string imagePath = "../result/Image_" + to_string(sequenceNum) + ".jpeg";
             cv::imwrite(imagePath.c_str(), processedFrame);
         }
 
