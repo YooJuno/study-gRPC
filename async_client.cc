@@ -25,6 +25,9 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
+using grpc::ClientAsyncResponseReader;
+using grpc::CompletionQueue;
+
 using remote::RemoteCommunication;
 using remote::ProtoMat;
 
@@ -43,39 +46,46 @@ public:
         ProtoMat request, reply;
         ClientContext context;
         Status status;
+        CompletionQueue cq;
 
-        std::mutex mu;
-        std::condition_variable cv;
-        bool done = false;
+        std::unique_ptr<ClientAsyncResponseReader<ProtoMat> > rpc(
+            // stub_->AsyncSayHello(&context, request, &cq));
+            _stub->AsyncRemoteProcessImageWithYOLO(&context, request, &cq));
+        
+        // Request that, upon completion of the RPC, "reply" be updated with the
+        // server's response; "status" with the indication of whether the operation
+        // was successful. Tag the request with the integer 1.
+        rpc->Finish(&reply, &status, (void*)1);
+        void* got_tag;
+        bool ok = false;
 
-        request = ConvertMatToProtomat(image);
+        // Block until the next result is available in the completion queue "cq".
+        // The return value of Next should always be checked. This return value
+        // tells us whether there is any kind of event or the cq_ is shutting down.
+        CHECK(cq.Next(&got_tag, &ok));
 
-        _stub->async()->RemoteProcessImageWithYOLO(&context, &request, &reply, [&mu, &cv, &done, &status](Status s) 
-        {
-            status = std::move(s);
-            std::lock_guard<std::mutex> lock(mu);
-            done = true;
-            cv.notify_one();
-        });
+        // Verify that the result from "cq" corresponds, by its tag, our previous
+        // request.
+        CHECK_EQ(got_tag, (void*)1);
+        // ... and that the request was completed successfully. Note that "ok"
+        // corresponds solely to the request for updates introduced by Finish().
+        CHECK(ok);
 
-        std::unique_lock<std::mutex> lock(mu);
-        while (!done) 
-        {
-            cv.wait(lock);
-        }
-
+        // Act upon the status of the actual RPC.
         if (!status.ok())
         {   
             cout << "gRPC connection is unstable\n";
             exit(1);
         }
 
-        return ConvertProtomatToMat(reply);
+        return ConvertProtomatToMat(reply);    
     }
 
 private:
     unique_ptr<RemoteCommunication::Stub> _stub;
 };
+
+// Server에서 딜레이를 주고 Client에서 받을 때 Async의 특성을 이용하여 다음 이미지로 넘어갈 때 바로 넘어갈 수 있도록 하면 재미 좀 볼 수 있을듯.
 
 void RunClient(string targetStr, string videoPath, int job)
 {
