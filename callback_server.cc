@@ -39,8 +39,10 @@ class ServerNode final
 : public RemoteCommunication::CallbackService, public MediaHandler, public YOLOv4
 {
 public:
-    ServerNode()
-        : _yolo(new YOLOv4()) {}
+    ServerNode() : _yolo(new YOLOv4()) 
+    {
+
+    }
     Status RemoteProcessImageWithCircle(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
     {
         cv::Mat frame = ConvertProtomatToMat(*request);
@@ -54,7 +56,7 @@ public:
 
         return Status::OK;
     }
-    
+
     ServerUnaryReactor* RemoteProcessImageWithYOLO(CallbackServerContext* context, const ProtoMat* request, ProtoMat* reply) override
     {
         cv::Mat frame = ConvertProtomatToMat(*request);
