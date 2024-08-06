@@ -50,13 +50,26 @@ public:
 
         request = ConvertMatToProtomat(image);
 
-        _stub->async()->RemoteProcessImageWithYOLO(&context, &request, &reply, [&mu, &cv, &done, &status](Status s) 
+        if (request.channels() == 1)
         {
-            status = std::move(s);
-            std::lock_guard<std::mutex> lock(mu);
-            done = true;
-            cv.notify_one();
-        });
+            _stub->async()->RemoteProcessImageWithYOLO(&context, &request, &reply, [&mu, &cv, &done, &status](Status s) 
+            {
+                status = std::move(s);
+                std::lock_guard<std::mutex> lock(mu);
+                done = true;
+                cv.notify_one();
+            });
+        }
+        else if (request.channels() == 3)
+        {
+            _stub->async()->RemoteProcessImageWithCircle(&context, &request, &reply, [&mu, &cv, &done, &status](Status s) 
+            {
+                status = std::move(s);
+                std::lock_guard<std::mutex> lock(mu);
+                done = true;
+                cv.notify_one();
+            });
+        }
 
         std::unique_lock<std::mutex> lock(mu);
         while (!done) 

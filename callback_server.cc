@@ -43,7 +43,7 @@ public:
     {
 
     }
-    Status RemoteProcessImageWithCircle(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
+    ServerUnaryReactor* RemoteProcessImageWithCircle(CallbackServerContext* context, const ProtoMat* request, ProtoMat* reply) override
     {
         cv::Mat frame = ConvertProtomatToMat(*request);
 
@@ -54,7 +54,9 @@ public:
         cv::circle(frame, cv::Point(frame.cols/2, frame.rows/2), 50, cv::Scalar(dis(gen), dis(gen), dis(gen)), 3); 
         *reply = ConvertMatToProtomat(frame);
 
-        return Status::OK;
+        ServerUnaryReactor* reactor = context->DefaultReactor();
+        reactor->Finish(Status::OK);
+        return reactor;
     }
 
     ServerUnaryReactor* RemoteProcessImageWithYOLO(CallbackServerContext* context, const ProtoMat* request, ProtoMat* reply) override
