@@ -11,19 +11,19 @@ using namespace std;
 
 auto MediaHandler::ConvertProtomatToMat(const ProtoMat& protomat) -> cv::Mat
 {
-    cv::Mat img = cv::Mat(cv::Size(protomat.width(), protomat.height()), protomat.type());
+    cv::Mat image = cv::Mat(cv::Size(protomat.width(), protomat.height()), protomat.type());
     string serializedMatrix(protomat.buffer());
     int idx = 0;
 
-    for (auto row=0 ; row<img.rows ; row++)
+    for (auto row=0 ; row<image.rows ; row++)
     {
-        uchar* pointer_row = img.ptr<uchar>(row); 
+        uchar* pointer_row = image.ptr<uchar>(row); 
 
-        for (auto col=0 ; col<img.cols ; col++)
+        for (auto col=0 ; col<image.cols ; col++)
         {  
             if (protomat.channels() == GRAY)
             {   
-                img.at<uchar>(row, col) = serializedMatrix[idx++];
+                pointer_row[col] = serializedMatrix[idx++];
             }
             else
             {
@@ -34,10 +34,10 @@ auto MediaHandler::ConvertProtomatToMat(const ProtoMat& protomat) -> cv::Mat
         }
     }
 
-    return img;
+    return image;
 }
 
-auto MediaHandler::ConvertMatToProtomat(const cv::Mat& image) -> ProtoMat
+auto MediaHandler::ConvertMatToProtomat(cv::Mat image) -> ProtoMat
 {
     ProtoMat result;
     string buffer("");
@@ -48,21 +48,21 @@ auto MediaHandler::ConvertMatToProtomat(const cv::Mat& image) -> ProtoMat
     result.set_type(image.type());
     result.set_seq(result.seq() + 1);
     
-    for (auto i=0 ; i<image.size().height ; i++)
+    for (auto row=0 ; row<image.rows ; row++)
     {
-        for (auto j=0 ; j<image.size().width ; j++)
+        uchar* pointer_row = image.ptr<uchar>(row);
+
+        for (auto col=0 ; col<image.cols ; col++)
         {
             if (image.channels() == GRAY)
             {       
-                buffer += static_cast<uchar>(image.at<uchar>(i, j));
+                buffer += static_cast<uchar>(pointer_row[col]);
             }
             else if (image.channels() == COLOR)
             {
-                const cv::Vec3b& pixel = image.at<cv::Vec3b>(i, j);
-
-                buffer += static_cast<uchar>(pixel[0]); // B
-                buffer += static_cast<uchar>(pixel[1]); // G
-                buffer += static_cast<uchar>(pixel[2]); // R
+                buffer += static_cast<uchar>(pointer_row[col * 3 + 0]); // B
+                buffer += static_cast<uchar>(pointer_row[col * 3 + 1]); // G
+                buffer += static_cast<uchar>(pointer_row[col * 3 + 2]); // R
             }
         }
     }
