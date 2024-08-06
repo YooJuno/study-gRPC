@@ -29,11 +29,11 @@ using namespace std;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-class Uploader final 
+class ServerNode final 
 : public RemoteCommunication::Service, public MediaHandler, public YOLOv4
 {
 public:
-    Uploader()
+    ServerNode()
         : _yolo(new YOLOv4()) {}
     Status RemoteProcessImageWithRect(ServerContext* context, const ProtoMat* request, ProtoMat* reply) override
     {
@@ -72,7 +72,7 @@ private:
 //////////////////////////////////////////////////////////////////////
 void RunServer(uint16_t port) 
 {
-    Uploader service;
+    ServerNode service;
     ServerBuilder builder;
     string serverAddress = absl::StrFormat("0.0.0.0:%d", port);
 

@@ -25,10 +25,10 @@ using namespace std;
 
 ABSL_FLAG(string, target, "localhost:50051", "Server address");
 
-class Downloader : public MediaHandler
+class ClientNode : public MediaHandler
 {
 public:
-    Downloader(shared_ptr<Channel> channel)
+    ClientNode(shared_ptr<Channel> channel)
         : _stub (RemoteCommunication::NewStub(channel)) {}
 
     auto RemoteProcessImage (cv::Mat image, int job) -> cv::Mat
@@ -65,7 +65,7 @@ void RunClient(string targetStr, string videoPath, int job)
     args.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
     args.SetMaxSendMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
 
-    Downloader service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
+    ClientNode service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
 
     cv::VideoCapture cap(videoPath);
     int fps = cap.get(cv::CAP_PROP_FPS);
