@@ -11,7 +11,7 @@ using namespace std;
 YOLOv4::YOLOv4() 
 {
     string yoloVersion("v4-tiny");
-    string yoloFolderPath("../../yolov4/");
+    string yoloFolderPath("../yolov4/");
     
     const string yoloPath(yoloFolderPath + "yolo" + yoloVersion);
     auto net = LoadNet(yoloPath + ".cfg", yoloPath + ".weights", false); // if use cuda : true
