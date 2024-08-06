@@ -1,6 +1,14 @@
 # gRPC를 활용한 Mat(OpenCV) 송수신 프로그램
 
-## 구현 환경
+## Prerequisite
+- Protocol Buuffer
+- CMAKE
+- gRPC
+- YOLOv4
+
+
+
+## OS
 
 - Ubuntu 20.04 이상
 - macOS 14
@@ -96,11 +104,11 @@ popd
 
 ```bash
 cd ~
-git clone https://github.com/YooJuno/study-gRPC
+git clone --branch v2.1_Mat-Sync https://github.com/YooJuno/study-gRPC
 cd study-gRPC
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local  ..
+cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local  ../CMakeLists -B .
 make -j 8
 ```
 
@@ -108,40 +116,31 @@ make -j 8
 
 ### SERVER
 
-- ./remote_server  <DATASET_FOLDER_PATH>
+- ./remote_server
 
 ```bash
-./remote_server ../dataset/
+./remote_server
 ```
-
-
-![Untitled](images/Untitled%207.png)
+![alt text](image.png)    
 
 ### CLIENT
 
-- ./remote_client <DOWNLOAD_FOLDER_PATH>
+- ./remote_client   <VIDEO_PATH>   <CIRCLE:0 , YOLO:1>
 ```bash
-mkdir ../download
-./remote_client ../download/
+mkdir ../result
+./remote_client ../dataset/video.mp4 1
 ```
-    
-- Choose number you wanna download.
-    
-    ![Untitled](images/Untitled%202.png)
-    
+![alt text](image-1.png)
 
-- Then you can see the information of file you select.
-    
-    ![Untitled](images/Untitled%203.png)
-    
 
-- You can see the file in Download folder
-    
-    ![Untitled](images/Untitled%205.png)
-    
-    ![Untitled](images/Untitled%206.png)
+- You can see the processed picture by server
+
+    ![alt text](image-2.png)
+
     
 
 ### Reference
 
 https://grpc.io/docs/languages/cpp/quickstart/
+
+https://github.com/improvess/yOLOv4-opencv-cpp-python
