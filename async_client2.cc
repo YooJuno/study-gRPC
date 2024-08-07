@@ -1,5 +1,5 @@
-#include "remote_message.grpc.pb.h"
 #include <opencv4/opencv2/opencv.hpp>
+#include "remote_message.grpc.pb.h"
 #include "media_handler.h"
 
 #include "absl/flags/flag.h"
@@ -35,17 +35,12 @@ public:
     explicit ClientNode(std::shared_ptr<Channel> channel)
         : stub_(RemoteCommunication::NewStub(channel)) {}
 
-    // Assembles the client's payload and sends it to the server.
     void ProcessImageWithYOLO(cv::Mat image) 
-    {
-        cout << "ProcessImageWithYOLO\n";
-        // Data we are sending to the server.
+    {        
         ProtoMat request = ConvertMatToProtomat(image);
-
-        // Call object to store rpc data 
         AsyncClientCall* call = new AsyncClientCall;
 
-        // stub_->PrepareAsyncSayHello() creates an RPC object, returning
+        // This function creates an RPC object, returning
         // an instance to store in "call" but does not actually start the RPC
         // Because we are using the asynchronous API, we need to hold on to
         // the "call" instance in order to get updates on the ongoing RPC.
@@ -62,8 +57,9 @@ public:
         call->response_reader->Finish(&call->reply, &call->status, (void*)call);
     }
 
-    // Loop while listening for completed responses.
-    // Prints out the response from the server.
+    // 쓰레드에서 수신과는 별도로 돌아감. 
+    // 즉 비동기적으로 cq에 차곡차곡 쌓이는 이미지를 확인할 수 있음
+    // cq가 비어있다면 기다렸다가 수신.
     void AsyncCompleteRpc() 
     {
         void* got_tag;
@@ -80,7 +76,8 @@ public:
             if (call->status.ok())
             {
                 cv::imshow("client2",ConvertProtomatToMat( call->reply));
-                cv::waitKey(0);
+                if (cv::waitKey(0) == 27)
+                    break;
             }
 
             // Once we're complete, deallocate the call object.
