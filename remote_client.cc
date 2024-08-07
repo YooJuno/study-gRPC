@@ -87,7 +87,7 @@ void RunClient(string targetStr, string videoPath, int job)
 
         sequenceNum++;
 
-        if (cv::waitKey(0) == 27) 
+        if (cv::waitKey(1000/fps) == 27) 
             break;
     }
 }
