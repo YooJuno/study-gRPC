@@ -1,4 +1,3 @@
-#include "remote_message.grpc.pb.h"
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -6,13 +5,14 @@
 #include <grpcpp/grpcpp.h>
 #include <opencv4/opencv2/opencv.hpp>
 
+#include "remote_message.grpc.pb.h"
 #include "media_handler.h"
+#include <condition_variable>  // cv 
+#include <mutex>               // mu 
 
 #include <iostream>
 #include <string>
 
-#include <condition_variable>  // cv //
-#include <mutex>               // mu //
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -26,7 +26,19 @@ using remote::ProtoMat;
 
 using namespace std;
 
+// [Argument option]
+//       (type  , name  , default          , help-text)
 ABSL_FLAG(string, target, "localhost:50051", "Server address");
+
+/******************************************************************/
+/******************************************************************/
+/*********                                                *********/
+/*********       It is not a Asyncronous code.            *********/
+/*********       It sends request and wait until          *********/
+/*********       receive reply message. (by juno)         *********/
+/*********                                                *********/
+/******************************************************************/
+/******************************************************************/
 
 class ClientNode : public MediaHandler
 {
@@ -45,6 +57,9 @@ public:
 
         std::unique_ptr<ClientAsyncResponseReader<ProtoMat> > rpc(
             _stub->AsyncRemoteProcessImageWithYOLO(&context, request, &cq));
+        
+        // std::unique_ptr<ClientAsyncResponseReader<ProtoMat> > rpc(
+        //     _stub->AsyncRemoteProcessImageWithCircle(&context, request, &cq));
 
         // Request that, upon completion of the RPC, "reply" be updated with the
         // server's response; "status" with the indication of whether the operation
@@ -106,7 +121,8 @@ void RunClient(string targetStr, string videoPath, int job)
         }
 
         cv::imshow("processed video", processedFrame);
-        if (cv::waitKey(1000/fps) == 27) 
+        // if (cv::waitKey(1000/fps) == 27) 
+        if (cv::waitKey(0) == 27) 
             break;
     }
 }
