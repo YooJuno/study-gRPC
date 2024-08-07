@@ -51,7 +51,6 @@ public:
         request = ConvertMatToProtomat(image);
 
         std::unique_ptr<ClientAsyncResponseReader<ProtoMat> > rpc(
-            // stub_->AsyncSayHello(&context, request, &cq));
             _stub->AsyncRemoteProcessImageWithYOLO(&context, request, &cq));
         
         // Request that, upon completion of the RPC, "reply" be updated with the
@@ -87,8 +86,6 @@ public:
 private:
     unique_ptr<RemoteCommunication::Stub> _stub;
 };
-
-// Server에서 딜레이를 주고 Client에서 받을 때 Async의 특성을 이용하여 다음 이미지로 넘어갈 때 바로 넘어갈 수 있도록 하면 재미 좀 볼 수 있을듯.
 
 void RunClient(string targetStr, string videoPath, int job)
 {
