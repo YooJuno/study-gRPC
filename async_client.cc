@@ -48,6 +48,8 @@ public:
         Status status;
         CompletionQueue cq;
 
+        request = ConvertMatToProtomat(image);
+
         std::unique_ptr<ClientAsyncResponseReader<ProtoMat> > rpc(
             // stub_->AsyncSayHello(&context, request, &cq));
             _stub->AsyncRemoteProcessImageWithYOLO(&context, request, &cq));
@@ -58,25 +60,26 @@ public:
         rpc->Finish(&reply, &status, (void*)1);
         void* got_tag;
         bool ok = false;
-
+        
         // Block until the next result is available in the completion queue "cq".
         // The return value of Next should always be checked. This return value
         // tells us whether there is any kind of event or the cq_ is shutting down.
         CHECK(cq.Next(&got_tag, &ok));
-
+        
         // Verify that the result from "cq" corresponds, by its tag, our previous
         // request.
         CHECK_EQ(got_tag, (void*)1);
+        
         // ... and that the request was completed successfully. Note that "ok"
         // corresponds solely to the request for updates introduced by Finish().
         CHECK(ok);
-
+        
         // Act upon the status of the actual RPC.
         if (!status.ok())
         {   
             cout << "gRPC connection is unstable\n";
             exit(1);
-        }
+        }    
 
         return ConvertProtomatToMat(reply);    
     }
@@ -102,21 +105,17 @@ void RunClient(string targetStr, string videoPath, int job)
     int sequenceNum = 0;
 
     cv::Mat frame, processedFrame;
-
     while (cap.read(frame))
     {
         processedFrame = service.RemoteProcessImage(frame, job);
-
-        cv::imshow("processed video", processedFrame);
-
-        if (sequenceNum % fps == 0) // 1 image per 1 sec
+        
+        if (sequenceNum++ % fps == 0) // 1 image per 1 sec
         {
-            string imagePath = "../result/Image_" + to_string(sequenceNum) + ".jpeg";
+            string imagePath = "../result/Image_" + to_string(sequenceNum-1) + ".jpeg";
             cv::imwrite(imagePath.c_str(), processedFrame);
         }
 
-        sequenceNum++;
-
+        cv::imshow("processed video", processedFrame);
         if (cv::waitKey(0) == 27) 
             break;
     }
@@ -132,9 +131,7 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    string videoPath(argv[1]);
-
-    RunClient(absl::GetFlag(FLAGS_target), videoPath, atoi(argv[2]));
+    RunClient(absl::GetFlag(FLAGS_target), argv[1], atoi(argv[2]));
 
     return 0;
 }
