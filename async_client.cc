@@ -11,15 +11,8 @@
 #include <iostream>
 #include <string>
 
-///////////////////////////////////////
-///      추가한 내용들 24-08-06      ///
-///////////////////////////////////////
 #include <condition_variable>  // cv //
 #include <mutex>               // mu //
-///////////////////////////////////////
-
-#define CIRCLE 0
-#define YOLO 1
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -52,33 +45,33 @@ public:
 
         std::unique_ptr<ClientAsyncResponseReader<ProtoMat> > rpc(
             _stub->AsyncRemoteProcessImageWithYOLO(&context, request, &cq));
-        
+
         // Request that, upon completion of the RPC, "reply" be updated with the
         // server's response; "status" with the indication of whether the operation
         // was successful. Tag the request with the integer 1.
         rpc->Finish(&reply, &status, (void*)1);
         void* got_tag;
         bool ok = false;
-        
+
         // Block until the next result is available in the completion queue "cq".
         // The return value of Next should always be checked. This return value
         // tells us whether there is any kind of event or the cq_ is shutting down.
         CHECK(cq.Next(&got_tag, &ok));
-        
+
         // Verify that the result from "cq" corresponds, by its tag, our previous
         // request.
         CHECK_EQ(got_tag, (void*)1);
-        
+
         // ... and that the request was completed successfully. Note that "ok"
         // corresponds solely to the request for updates introduced by Finish().
         CHECK(ok);
-        
+
         // Act upon the status of the actual RPC.
         if (!status.ok())
         {   
             cout << "gRPC connection is unstable\n";
             exit(1);
-        }    
+        }
 
         return ConvertProtomatToMat(reply);    
     }
@@ -113,7 +106,7 @@ void RunClient(string targetStr, string videoPath, int job)
         }
 
         cv::imshow("processed video", processedFrame);
-        if (cv::waitKey(0) == 27) 
+        if (cv::waitKey(1000/fps) == 27) 
             break;
     }
 }
