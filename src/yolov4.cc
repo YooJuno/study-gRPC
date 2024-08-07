@@ -76,7 +76,7 @@ auto YOLOv4::DetectObject(cv::Mat frame) -> cv::Mat
         cv::rectangle(frame, box, color, 1);
         cv::rectangle(frame, cv::Point(box.x, box.y - 20), cv::Point(box.x + box.width, box.y), color, cv::FILLED);
 
-        cv::putText(frame, _classList[classId].c_str(), cv::Point(box.x, box.y - 5), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
+        cv::putText(frame, _classList[classId].c_str(), cv::Point(box.x, box.y - 5), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 0, 0), 2);
     }
 
     return frame;
