@@ -32,7 +32,9 @@ using remote::ProtoMat;
 
 using namespace std;
 
-ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
+// [Argument option]
+//       (type    , name, default, help-text)
+ABSL_FLAG(uint16_t, port, 50051  , "Server port for the service");
 
 YOLOv4 yolo;
 
@@ -72,6 +74,25 @@ public:
     }
 
 private:
+    void HandleRpcs() 
+    {
+        // Spawn a new CallData instance to serve new clients.
+        new CallData(&service_, cq_.get(), 0); // status = CREATE
+        void* tag;  // 작업을 식별하는 태그 (일반적으로 CallData 객체의 포인터)
+        bool ok;    // 작업이 성공적으로 완료되었는지를 나타내는 플래그
+        
+        // Block waiting to read the next event from the completion queue.
+        while (true) // 탈출 조건?
+        {    
+            CHECK(cq_->Next(&tag, &ok)); // Completion Queue에서 이벤트 대기 (block loop)
+            CHECK(ok); // 작업이 성공적으로 완료되었는지 확인
+
+            static_cast<CallData*>(tag)->Proceed(); // tag로 식별된 작업을 처리.
+        }
+
+        cout<<"after while()\n";
+    }
+
     // Class encompasing the state and logic needed to serve a request.
     class CallData : public MediaHandler
     {
@@ -90,7 +111,6 @@ private:
         {
             if (status_ == CREATE) 
             {
-                cout << "[" << _id << "]create" << endl;
                 // Make this instance progress to the PROCESS state.
                 status_ = PROCESS;
 
@@ -102,6 +122,8 @@ private:
                 // 클라이언트 요청을 비동기적으로 처리할 것을 시스템에 요청함
                 // 요청이 완료되면, 이 정보는 Completion Queue에 이벤트로 기록됨
                 service_->RequestRemoteProcessImageWithYOLO(&ctx_, &request_, &responder_, cq_, cq_, this);
+
+                cout << "[" << _id << "]create" << endl;
             }
             else if (status_ == PROCESS) 
             { 
@@ -109,9 +131,11 @@ private:
                 // Spawn a new CallData instance to serve new clients while we process
                 // the one for this CallData. The instance will deallocate itself as
                 // part of its FINISH state.
-                new CallData(service_, cq_, _id+1);
+                new CallData(service_, cq_, _id + 1);
 
-                this_thread::sleep_for(chrono::milliseconds(500));
+                // Delay for Debugging
+                // this_thread::sleep_for(chrono::milliseconds(500));
+
                 // The actual processing.
                 cv::Mat frame = ConvertProtomatToMat(request_);
                 reply_ = ConvertMatToProtomat(yolo.DetectObject(frame));
@@ -158,30 +182,6 @@ private:
         int _id;
     };
 
-    void HandleRpcs() 
-    {
-        cout << "*****************   HandleRpcs()   *****************\n";
-        // Spawn a new CallData instance to serve new clients.
-        new CallData(&service_, cq_.get(), 0); // status = CREATE
-        void* tag;  // 작업을 식별하는 태그 (일반적으로 CallData 객체의 포인터)
-        bool ok;    // 작업이 성공적으로 완료되었는지를 나타내는 플래그
-        
-        // Block waiting to read the next event from the completion queue.
-        while (true) // 탈출 조건?
-        {    
-            // The event is uniquely identified by its tag, which in this case is the
-            // memory address of a CallData instance.
-            // This return value tells us whether there is any kind of event or cq_ is shutting down.
-            CHECK(cq_->Next(&tag, &ok)); // Completion Queue에서 이벤트 대기. while blocking
-            CHECK(ok);// 작업이 성공적으로 완료되었는지 확인합니다.
-
-            // tag로 식별된 작업을 처리합니다.
-            static_cast<CallData*>(tag)->Proceed(); // status = 
-        }
-
-        cout<<"after while()\n";
-    }
-
     std::unique_ptr<ServerCompletionQueue> cq_;
     RemoteCommunication::AsyncService service_;
     std::unique_ptr<Server> server_;
@@ -189,6 +189,7 @@ private:
 
 int main(int argc, char** argv) 
 {
+    /* --target=<PORT_NUMBER> */
     absl::ParseCommandLine(argc, argv);
     ServerImpl server;
     server.Run(absl::GetFlag(FLAGS_port));
