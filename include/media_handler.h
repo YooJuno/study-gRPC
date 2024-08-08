@@ -4,8 +4,8 @@
 class MediaHandler
 {
 public:
-    auto ConvertProtomatToMat(const remote::ProtoMat& protomat) -> cv::Mat;
-    auto ConvertMatToProtomat(cv::Mat image) -> remote::ProtoMat;
+    auto ConvertProtoMatToMat(const remote::ProtoMat&) -> cv::Mat;
+    auto ConvertMatToProtoMat(cv::Mat) -> remote::ProtoMat;
 };
 
 #endif

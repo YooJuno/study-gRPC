@@ -9,10 +9,10 @@ using namespace std;
 #define COLOR 3
 #define GRAY 1
 
-auto MediaHandler::ConvertProtomatToMat(const ProtoMat& protomat) -> cv::Mat
+auto MediaHandler::ConvertProtoMatToMat(const ProtoMat& protoMat) -> cv::Mat
 {
-    cv::Mat image = cv::Mat(cv::Size(protomat.width(), protomat.height()), protomat.type());
-    string serializedMatrix(protomat.buffer());
+    cv::Mat image = cv::Mat(cv::Size(protoMat.width(), protoMat.height()), protoMat.type());
+    string serializedMatrix(protoMat.buffer());
     int idx = 0;
 
     for (auto row=0 ; row<image.rows ; row++)
@@ -21,7 +21,7 @@ auto MediaHandler::ConvertProtomatToMat(const ProtoMat& protomat) -> cv::Mat
 
         for (auto col=0 ; col<image.cols ; col++)
         {  
-            if (protomat.channels() == GRAY)
+            if (protoMat.channels() == GRAY)
             {   
                 pointer_row[col] = serializedMatrix[idx++];
             }
@@ -37,7 +37,7 @@ auto MediaHandler::ConvertProtomatToMat(const ProtoMat& protomat) -> cv::Mat
     return image;
 }
 
-auto MediaHandler::ConvertMatToProtomat(cv::Mat image) -> ProtoMat
+auto MediaHandler::ConvertMatToProtoMat(cv::Mat image) -> ProtoMat
 {
     ProtoMat result;
     string buffer("");
