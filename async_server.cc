@@ -30,7 +30,7 @@ using remote::ProtoMat;
 using namespace std;
 
 // [Argument option]
-//       (type    , name, default, help-text)
+// It can be seen with "--help" option
 ABSL_FLAG(uint16_t, port, 50051  , "Server port for the service");
 
 YOLOv4 yolo;
@@ -57,89 +57,77 @@ public:
 
         std::cout << "Server listening on " << server_address << std::endl;
 
-        HandleRpcs();
+        HandleRpcs(server_, cq_);
     }
 
 private:
-    void HandleRpcs() 
+    void HandleRpcs(RemoteCommunication::AsyncService* service, ServerCompletionQueue* cq) 
     {
-        // Spawn a new CallData instance to serve [new clients].
-        new CallData(&service_, cq_.get(), 0); // 최초 1회만. 나머지는 Proceed()에서
-        void* tag;  // 작업을 식별하는 태그 (일반적으로 CallData 객체의 포인터)
+        /* 1 */new CallData(&service, cq.get(), 0);
+
+        void* tag;  // 작업을 식별하는 태그. 주로 this로 값이 정해지며 이는 CallData 인스턴스의 주소.
         bool ok;
         
-        // Block waiting to read the next event from the completion queue.
         while (true)
         {    
-            ///////////////////////////////////////
-            ////////////   이해 안됨   /////////////
-            ///////////////////////////////////////
-            // cq_->Next(&tag, &ok)
-            CHECK(cq_->Next(&tag, &ok)); // ==> if(false) exit();
-            CHECK(ok); // 작업이 성공적으로 완료되었는지 확인
+            /* 4(PROCESS) - d(PROCESS) - 8(FINISH) - h(FINISH)*/CHECK(cq->Next(&tag, &ok));
+            /*
+            cq->Next(&tag, &ok)
+            -   이벤트가 들어올 때 까지 blocking
+            -   현재 프로그램에서 이벤트는
+                    1) [요쳥 완료] service_->RequestProcessImage(&ctx_, &request_, &responder_, cq_, cq_, this);
+                    2) [응답 완료] responder_.Finish(reply_, Status::OK, this);
+            -   void* tag = 큐에서 기다리고 있던 CallData 인스턴스의 주소를 리턴.
+            */
 
-            static_cast<CallData*>(tag)->Proceed(); // tag로 식별된 작업을 처리.
+            CHECK(ok); 
+
+            /* 5(PROCESS) - e(process) - 9(FINISH) - i(FINISH)*/static_cast<CallData*>(tag)->Proceed();
         }
     }
 
     class CallData : public MediaHandler
     {
     public:
-        // Take in the "service" instance (in this case representing an asynchronous
-        // server) and the completion queue "cq" used for asynchronous communication
-        // with the gRPC runtime.
-        CallData(RemoteCommunication::AsyncService* service, ServerCompletionQueue* cq, int id)
-        : service_(service), cq_(cq), responder_(&ctx_), status_(CREATE), _id(id)
+        CallData(RemoteCommunication::AsyncService* service, ServerCompletionQueue* cq, int seq)
+        : service_(service), cq_(cq), responder_(&ctx_), status_(CREATE), _seq(seq)
         {
-            cout << "------------------------------------- New CallData\n";
-            Proceed();
+            /* 2(CREATE) - b(CREATE)*/Proceed();
         }
 
-
-        ///////////////////////////////////////
-        ////////////   이해 안됨   /////////////
-        ///////////////////////////////////////
         void Proceed() 
         {
             if (status_ == CREATE) 
             {
                 status_ = PROCESS;
 
-                cout << "[" << _id << "]create" << endl;
-                // As part of the initial CREATE state, we *request* that the system
-                // start processing ProtoMat requests. In this request, "this" acts are
-                // the tag uniquely identifying the request (so that different CallData
-                // instances can serve different requests concurrently), in this case
-                // the memory address of this CallData instance.
-                // 클라이언트 요청을 비동기적으로 처리할 것을 시스템에 요청함
-                // 요청이 완료되면, 이 정보는 Completion Queue에 이벤트로 기록됨
-                service_->RequestRemoteProcessImageWithYOLO(&ctx_, &request_, &responder_, cq_, cq_, this); // responder_를 넣어주는게 포인트
-
+                cout << "[" << _seq << "]create" << endl;
+                /* 3 - */service_->RequestProcessImage(&ctx_, &request_, &responder_, cq_, cq_, this);
+                // => 비동기 요청을 큐에 등록하여 loop에서 이 작업을 대기함
+                // => 별도의 쓰레드에서 기다리는 것인지는 모르겠음.
             }
             else if (status_ == PROCESS) 
-            { 
-                cout << "[" << _id << "]    process" << endl;
-                // Spawn a new CallData instance to serve new clients while we process
-                // the one for this CallData.
-                new CallData(service_, cq_, _id + 1);
-
-                // Delay for Debugging
-                // this_thread::sleep_for(chrono::milliseconds(500));
-
-                // The actual processing.
-                cv::Mat frame = ConvertProtomatToMat(request_);
-                reply_ = ConvertMatToProtomat(yolo.DetectObject(frame));
-                
-                // And we are done! Let the gRPC runtime know we've finished
-                status_ = FINISH;
-                responder_.Finish(reply_, Status::OK, this);
-            } 
-            else 
             {
-                cout << "[" << _id << "]        finish" << endl;
-                CHECK_EQ(status_, FINISH); // 단순히 비교를 위한 임시매크로
+                cout << "[" << _seq << "]    process" << endl;
+                // initiate new connection
+                /* 6 - a - ...*/new CallData(service_, cq_, _seq + 1); // 곧 들어올 요청을 위해
 
-                // Once in the FINISH state, deallocate ourselves (CallData).
+                cv::Mat frame = ConvertProtoMatToMat(request_);
+                reply_ = ConvertMatToProtoMat(yolo.DetectObject(frame));
+                
+                status_ = FINISH;
+                /* 7 - g*/ responder_.Finish(reply_, Status::OK, this); // 클라이언트에게 전송 알림.
+                // ServerCompletionQueue에 이벤트가 추가됨.
+                // CREATE 에서 요청 등록할 때 responder_를 함께 넣어줬기 때문에 비동기 작업이 완료되면
+                // cq_에 이벤트가 추가됨.
+                // 여기서 추가되는 this 포인터는 현재 인스턴스의 주소이며 이는 Queue에 추가된다.
+            } 
+            /* 10 - j */else 
+            {
+                // Queue에 등록 되는 것이 없기 때문에 종료.
+                cout << "[" << _seq << "]        finish" << endl;
+                CHECK_EQ(status_, FINISH);
+
                 delete this;
             }
         }
@@ -154,7 +142,7 @@ private:
         enum CallStatus { CREATE, PROCESS, FINISH };
         CallStatus status_;
 
-        int _id;
+        int _seq;
     };
 
     std::unique_ptr<ServerCompletionQueue> cq_;
