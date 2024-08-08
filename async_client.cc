@@ -27,8 +27,10 @@ using remote::ProtoMat;
 using namespace std;
 
 // [Argument option]
-//       (type  , name  , default          , help-text)
-ABSL_FLAG(string, target, "localhost:50051", "Server address");
+// It can be seen with "--help" option
+ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
+ABSL_FLAG(std::string, videoPath, "../dataset/video.mp4", "Video path");
+ABSL_FLAG(uint32_t, job, 1, "Job(0:Circle , 1:YOLO)");
 
 /******************************************************************/
 /******************************************************************/
@@ -53,13 +55,10 @@ public:
         Status status;
         CompletionQueue cq;
 
-        request = ConvertMatToProtomat(image);
+        request = ConvertMatToProtoMat(image);
 
         std::unique_ptr<ClientAsyncResponseReader<ProtoMat> > rpc(
-            _stub->AsyncRemoteProcessImageWithYOLO(&context, request, &cq));
-        
-        // std::unique_ptr<ClientAsyncResponseReader<ProtoMat> > rpc(
-        //     _stub->AsyncRemoteProcessImageWithCircle(&context, request, &cq));
+            _stub->AsyncProcessImage(&context, request, &cq));
 
         // Request that, upon completion of the RPC, "reply" be updated with the
         // server's response; "status" with the indication of whether the operation
@@ -88,7 +87,7 @@ public:
             exit(1);
         }
 
-        return ConvertProtomatToMat(reply);    
+        return ConvertProtoMatToMat(reply);    
     }
 
 private:
@@ -131,13 +130,7 @@ int main(int argc, char** argv)
 {
     absl::ParseCommandLine(argc, argv);
 
-    if (argc != 3)
-    {
-        cout << argv[0] << "   <VIDEO_PATH>   <Circle:0, YOLO:1>\n";
-        return 0;
-    }
-
-    RunClient(absl::GetFlag(FLAGS_target), argv[1], atoi(argv[2]));
+    RunClient(absl::GetFlag(FLAGS_target), absl::GetFlag(FLAGS_videoPath), absl::GetFlag(FLAGS_job));
 
     return 0;
 }
