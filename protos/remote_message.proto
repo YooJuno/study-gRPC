@@ -4,8 +4,7 @@ package remote;
 
 service RemoteCommunication
 {
-    rpc RemoteProcessImageWithYOLO (ProtoMat) returns (ProtoMat) {}
-    rpc RemoteProcessImageWithCircle (ProtoMat) returns (ProtoMat) {}
+    rpc ProcessImage (ProtoMat) returns (ProtoMat) {}
 }
 
 message Empty {}
