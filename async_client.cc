@@ -1,18 +1,19 @@
+#include <opencv4/opencv2/opencv.hpp>
+#include "remote_message.grpc.pb.h"
+#include "media_handler.h"
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/check.h"
 
+#include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
-#include <opencv4/opencv2/opencv.hpp>
-
-#include "remote_message.grpc.pb.h"
-#include "media_handler.h"
-#include <condition_variable>  // cv 
-#include <mutex>               // mu 
 
 #include <iostream>
+#include <memory>
 #include <string>
-
+#include <thread>
+#include <vector>
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -23,114 +24,122 @@ using grpc::CompletionQueue;
 
 using remote::RemoteCommunication;
 using remote::ProtoMat;
+using remote::DetectedList;
 
 using namespace std;
+using namespace cv;
 
 // [Argument option]
 // It can be seen with "--help" option
-ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
-ABSL_FLAG(std::string, videoPath, "../dataset/video.mp4", "Video path");
+ABSL_FLAG(string, target, "localhost:50051", "Server address");
+ABSL_FLAG(string, video_path, "../dataset/video.mp4", "Video path");
 ABSL_FLAG(uint32_t, job, 1, "Job(0:Circle , 1:YOLO)");
-
-/******************************************************************/
-/******************************************************************/
-/*********                                                *********/
-/*********       It is not a Asyncronous code.            *********/
-/*********       It sends request and wait until          *********/
-/*********       receive reply message. (by juno)         *********/
-/*********                                                *********/
-/******************************************************************/
-/******************************************************************/
 
 class ClientNode : public MediaHandler
 {
 public:
-    ClientNode(shared_ptr<Channel> channel)
-        : _stub (RemoteCommunication::NewStub(channel)) {}
+    explicit ClientNode(shared_ptr<Channel> channel)
+        : _stub(RemoteCommunication::NewStub(channel)) {}
 
-    auto RemoteProcessImage (cv::Mat image, int job) -> cv::Mat
+    void AsyncProcessImage(const string& path) // 이름 바꿔야됨
+    {        
+        Mat frame;
+        Mat nextFrame;
+
+        int seq=0;
+        string text;
+
+        VideoCapture cap(path);
+        cap.read(frame);
+
+        while (cap.read(nextFrame))
+        {
+            // putText(frame, "No. " + to_string(seq++), Point(50, 100), 1, 4, Scalar(200, 200, 200), 3, 8);
+            _images.push_back(frame);
+            AsyncClientCall* call = new AsyncClientCall;
+            ProtoMat request = ConvertMatToProtoMat(frame);
+            cout << seq << endl;
+            request.set_seq(seq++);
+            
+            call->response_reader = _stub->PrepareAsyncProcessYOLO(&call->context, request, &_cq);
+
+            call->response_reader->StartCall();
+
+            call->response_reader->Finish(&call->response, &call->status, (void*)call);
+
+            frame = nextFrame;
+        }
+    }
+
+    void AsyncCompleteRpc()
     {
-        ProtoMat request, reply;
-        ClientContext context;
-        Status status;
-        CompletionQueue cq;
-
-        request = ConvertMatToProtoMat(image);
-
-        std::unique_ptr<ClientAsyncResponseReader<ProtoMat> > rpc(
-            _stub->AsyncProcessImage(&context, request, &cq));
-
-        // Request that, upon completion of the RPC, "reply" be updated with the
-        // server's response; "status" with the indication of whether the operation
-        // was successful. Tag the request with the integer 1.
-        rpc->Finish(&reply, &status, (void*)1);
         void* got_tag;
         bool ok = false;
 
-        // Block until the next result is available in the completion queue "cq".
-        // The return value of Next should always be checked. This return value
-        // tells us whether there is any kind of event or the cq_ is shutting down.
-        CHECK(cq.Next(&got_tag, &ok));
+        while (_cq.Next(&got_tag, &ok)) 
+        {
+            AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
 
-        // Verify that the result from "cq" corresponds, by its tag, our previous
-        // request.
-        CHECK_EQ(got_tag, (void*)1);
+            CHECK(ok);
 
-        // ... and that the request was completed successfully. Note that "ok"
-        // corresponds solely to the request for updates introduced by Finish().
-        CHECK(ok);
+            if (call->status.ok())
+            {
+                DetectedList result = call->response;
 
-        // Act upon the status of the actual RPC.
-        if (!status.ok())
-        {   
-            cout << "gRPC connection is unstable\n";
-            exit(1);
+                Scalar color(200, 200, 200);
+                for (auto i : result.boxes())
+                {
+                //     cout << result.seq() << " (";
+                //     cout << i.tl_x() << ", " ;
+                //     cout << i.tl_y() << ", " ;
+                //     cout << i.width() << ", " ; 
+                //     cout << i.height() << ", " ; 
+                //     cout << i.classname() << ", " ; 
+                //     cout << (int)(100 * i.confidence()) << ")\n" ; 
+                    Rect rect(i.tl_x(), i.tl_y(), i.width(), i.height());
+                    rectangle(_images[result.seq()], rect, color, 1);
+                }
+
+                imshow("test", _images[result.seq()]);
+                waitKey(1000/25);
+            }
+
+            delete call;
         }
-
-        return ConvertProtoMatToMat(reply);    
+        cout << "End of File!\n";
     }
 
 private:
+    struct AsyncClientCall 
+    {
+        DetectedList response;
+        ClientContext context;
+        Status status;
+        unique_ptr<ClientAsyncResponseReader<DetectedList>> response_reader;
+    };
     unique_ptr<RemoteCommunication::Stub> _stub;
+    CompletionQueue _cq;
+
+    vector<cv::Mat> _images;
 };
 
-void RunClient(string targetStr, string videoPath, int job)
-{
-    ProtoMat protoMat;
-
-    grpc::ChannelArguments args;
-    args.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
-    args.SetMaxSendMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
-
-    ClientNode service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
-
-    cv::VideoCapture cap(videoPath);
-    int fps = cap.get(cv::CAP_PROP_FPS);
-    int sequenceNum = 0;
-
-    cv::Mat frame, processedFrame;
-    while (cap.read(frame))
-    {
-        processedFrame = service.RemoteProcessImage(frame, job);
-        
-        if (sequenceNum++ % fps == 0) // 1 image per 1 sec
-        {
-            string imagePath = "../result/Image_" + to_string(sequenceNum-1) + ".jpeg";
-            cv::imwrite(imagePath.c_str(), processedFrame);
-        }
-
-        cv::imshow("processed video", processedFrame);
-        // if (cv::waitKey(1000/fps) == 27) 
-        if (cv::waitKey(0) == 27) 
-            break;
-    }
-}
-
-int main(int argc, char** argv)  
+int main(int argc, char** argv)
 {
     absl::ParseCommandLine(argc, argv);
+    const string target_str = absl::GetFlag(FLAGS_target);
+    
+    grpc::ChannelArguments args;
+    args.SetMaxReceiveMessageSize(1024 * 1024 * 1024);
+    args.SetMaxSendMessageSize(1024 * 1024 * 1024);
 
-    RunClient(absl::GetFlag(FLAGS_target), absl::GetFlag(FLAGS_videoPath), absl::GetFlag(FLAGS_job));
+    ClientNode service(grpc::CreateCustomChannel(target_str, grpc::InsecureChannelCredentials(), args));
+
+    thread t(&ClientNode::AsyncCompleteRpc, &service);
+
+    service.AsyncProcessImage(absl::GetFlag(FLAGS_video_path));
+
+    cout << "Complete request video" << endl;
+    t.join();
 
     return 0;
 }

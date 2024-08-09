@@ -1,11 +1,13 @@
-#include "remote_message.grpc.pb.h"
-
 #include <iostream>
 #include <fstream>
 #include <opencv4/opencv2/opencv.hpp>
+
+#include "remote_message.grpc.pb.h"
 #include "yolov4.h"
 
 using remote::ProtoMat;
+using remote::DetectedList;
+using remote::BoundingBox;
 using namespace std;
 
 YOLOv4::YOLOv4() 
@@ -58,8 +60,9 @@ auto YOLOv4::LoadNet(const string& cfgPath, const string& weightsPath, bool is_c
     return result;
 }
 
-auto YOLOv4::DetectObject(cv::Mat frame) -> cv::Mat
-{       
+auto YOLOv4::DetectObject(cv::Mat frame) -> DetectedList
+{   
+    DetectedList objects;
     std::vector<int> classIds;
     std::vector<float> confidences;
     std::vector<cv::Rect> boxes;
@@ -69,15 +72,15 @@ auto YOLOv4::DetectObject(cv::Mat frame) -> cv::Mat
 
     for (auto i = 0; i < detections; ++i) 
     {
-        auto box = boxes[i];
-        auto classId = classIds[i];
-        const auto color = _colors[classId % _colors.size()];
+        BoundingBox* object = objects.add_boxes();
+        
+        object->set_classname(_classList[classIds[i]]);
+        object->set_confidence(confidences[i]);
+        object->set_tl_x(boxes[i].x);
+        object->set_tl_y(boxes[i].y);
+        object->set_width(boxes[i].width);
+        object->set_height(boxes[i].height);
+    }   
 
-        cv::rectangle(frame, box, color, 1);
-        cv::rectangle(frame, cv::Point(box.x, box.y - 20), cv::Point(box.x + box.width, box.y), color, cv::FILLED);
-
-        cv::putText(frame, _classList[classId].c_str(), cv::Point(box.x, box.y - 5), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 0, 0), 2);
-    }
-
-    return frame;
+    return objects;
 }

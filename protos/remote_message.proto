@@ -4,20 +4,34 @@ package remote;
 
 service RemoteCommunication
 {
-    rpc ProcessImage (ProtoMat) returns (ProtoMat) {}
-    
+    rpc ProcessYOLO (ProtoMat) returns (DetectedList) {}
 }
 
 message Empty {}
 
 message ProtoMat 
 {
-    string name = 1;
+    uint32 uid = 1;
     uint32 width = 2;
     uint32 height = 3;
     uint32 channels = 4;
     uint32 type = 5;
     bytes buffer = 6;
     uint32 seq = 7;
-    bool eof = 8;
+}
+
+message BoundingBox
+{
+    uint32 tl_x = 2;
+    uint32 tl_y = 3;
+    uint32 width = 4;
+    uint32 height = 5;
+    string classname = 6;
+    float confidence = 7;
+}
+
+message DetectedList // 임시 이름.
+{   
+    uint32 seq = 1;
+    repeated BoundingBox boxes = 2;
 }
