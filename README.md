@@ -4,7 +4,7 @@
 
 ```bash
 cd ~
-git clone https://github.com/YooJuno/study-gRPC
+git clone --branch v1.0_File-Download-Sync https://github.com/YooJuno/study-gRPC.git
 cd study-gRPC
 mkdir build
 cd build
