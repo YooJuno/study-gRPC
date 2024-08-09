@@ -5,6 +5,7 @@ package remote;
 service RemoteCommunication
 {
     rpc ProcessImage (ProtoMat) returns (ProtoMat) {}
+    
 }
 
 message Empty {}
@@ -18,5 +19,5 @@ message ProtoMat
     uint32 type = 5;
     bytes buffer = 6;
     uint32 seq = 7;
-    bool valid = 8;
+    bool eof = 8;
 }
