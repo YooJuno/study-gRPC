@@ -4,7 +4,7 @@
 
 ```bash
 cd ~
-git clone --branch v2.2_Mat-Async https://github.com/YooJuno/study-gRPC.git
+git clone --branch v3.0_gRPC-Final https://github.com/YooJuno/study-gRPC.git
 cd study-gRPC
 mkdir build
 cd build
@@ -27,8 +27,7 @@ make -j 8
 
 - ./remote_client   <VIDEO_PATH>   <CIRCLE:0 , YOLO:1>
 ```bash
-mkdir ../result
-./remote_client ../dataset/video.mp4 1
+./remote_client
 ```
 ![alt text](images/image-1.png)
 
