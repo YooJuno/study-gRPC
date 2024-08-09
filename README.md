@@ -1,10 +1,5 @@
 # gRPC Study during GMD SOFT Internship Period
 
-## 구현 환경
-
-- Ubuntu 20.04 이상
-- macOS 14
-
 ## Version
 - v1.0
   - https://github.com/YooJuno/study-gRPC/tree/v1.0_File-Download-Sync
@@ -17,7 +12,7 @@
 - v2.2
   - https://github.com/YooJuno/study-gRPC/tree/v2.2_Mat-Async
 
-## Installation
+## Installation gRPC
 
 ### Setup
 
