@@ -7,7 +7,7 @@
 
 ## Version
 - v1.0
-- - https://github.com/YooJuno/study-gRPC/tree/v1.0_File-Download-Sync
+  - https://github.com/YooJuno/study-gRPC/tree/v1.0_File-Download-Sync
 - v1.1
 - v2.0
 - v2.1
