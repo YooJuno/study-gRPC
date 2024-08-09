@@ -1,5 +1,12 @@
 # gRPC Study during GMD SOFT Internship Period
 
+## OS
+- Linux , MacOS
+
+## Libraries
+- OpenCV4
+- YOLOv4
+
 ## Version
 - v1.0
   - https://github.com/YooJuno/study-gRPC/tree/v1.0_File-Download-Sync
