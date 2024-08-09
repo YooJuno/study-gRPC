@@ -18,6 +18,8 @@
   - https://github.com/YooJuno/study-gRPC/tree/v2.1_Mat-Callback
 - v2.2
   - https://github.com/YooJuno/study-gRPC/tree/v2.2_Mat-Async
+- v3.0
+  - https://github.com/YooJuno/study-gRPC/tree/v3.0_gRPC-Final
 
 ## Installation gRPC
 
