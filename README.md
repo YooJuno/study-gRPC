@@ -4,7 +4,7 @@
 
 ```bash
 cd ~/grpc/examples/cpp/
-git clone https://github.com/YooJuno/study-gRPC
+git clone --branch v1.1_File-Download-Sync-Stream https://github.com/YooJuno/study-gRPC.git
 cd study-gRPC
 mkdir -p cmake/build download
 cd cmake/build
