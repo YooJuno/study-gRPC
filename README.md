@@ -1,4 +1,4 @@
-# gRPC를 활용한 Mat(OpenCV) 송수신 프로그램
+# gRPC를 활용한 원격 영상처리 프로그램
 
 ### Clone and Build this Repository
 
