@@ -2,16 +2,6 @@
 
 ### Clone and Build this Repository
 
-```bash
-cd ~
-git clone --branch v2.0_Mat-Sync https://github.com/YooJuno/study-gRPC.git
-cd study-gRPC
-mkdir build
-cd build
-cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local  ../CMakeLists -B .
-make -j 8
-```
-
 ## **Try it!**
 
 ### SERVER
