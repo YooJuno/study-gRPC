@@ -2,16 +2,6 @@
 
 ### Clone and Build this Repository
 
-```bash
-cd ~/grpc/examples/cpp/
-git clone --branch v1.1_File-Download-Sync-Stream https://github.com/YooJuno/study-gRPC.git
-cd study-gRPC
-mkdir -p cmake/build download
-cd cmake/build
-cmake -DCMAKE_PREFIX_PATH=$MY_INSTALL_DIR ../../
-make
-```
-
 ## **Try it!**
 
 ### SERVER
