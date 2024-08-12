@@ -24,7 +24,8 @@ using grpc::CompletionQueue;
 
 using remote::RemoteCommunication;
 using remote::ProtoMat;
-using remote::DetectedList;
+using remote::DetectedBoxList;
+using remote::BoundingBox;
 
 using namespace std;
 using namespace cv;
@@ -35,36 +36,105 @@ ABSL_FLAG(string, target, "localhost:50051", "Server address");
 ABSL_FLAG(string, video_path, "../dataset/video.mp4", "Video path");
 ABSL_FLAG(uint32_t, job, 1, "Job(0:Circle , 1:YOLO)");
 
+class VideoMaker
+{
+public:
+    VideoMaker(VideoCapture cap)
+        : _cap(cap)
+    {   
+        _width      = cap.get(CAP_PROP_FPS);
+	    _height     = cap.get(CAP_PROP_FRAME_WIDTH);
+	    _fps        = cap.get(CAP_PROP_FRAME_HEIGHT);
+        _count      = cap.get(CAP_PROP_FRAME_COUNT);
+    }
+
+    void PushBack(Mat image)
+    {
+        _images.push_back(image);
+    }
+
+    void PushBack(vector<BoundingBox> boxes)
+    {
+        _boxes.push_back(boxes);
+    }
+
+    void EncodeAndSave(const string& outputVideoPath)
+    {
+        VideoWriter output(outputVideoPath, VideoWriter::fourcc('M', 'P', '4', 'V'), _fps , Size(_width, _height), true);
+        
+        if (!output.isOpened())
+        {
+            cout << "에러 처리 요망\n" << endl;
+            return ;
+        }
+        
+        for(auto& img : _images)
+            output << img;
+    }
+
+    auto GetImageWithIndex(int idx) -> Mat
+    {   
+        return _images[idx];
+    }
+
+    void ReplaceImageWith(Mat substitute, int idx)
+    {
+        _images[idx] = substitute;
+    }
+
+    auto GetImages() -> vector<Mat>
+    {
+        return _images;
+    }
+
+    // auto GetCap() -> VideoCapture
+    // {
+
+    // }
+private:
+    vector<vector<BoundingBox>> _boxes;
+    vector<Mat> _images;
+    VideoCapture _cap;
+
+    int _width;
+    int _height;
+    int _fps;
+    int _count;
+};
+
 class ClientNode : public MediaHandler
 {
 public:
-    explicit ClientNode(shared_ptr<Channel> channel)
-        : _stub(RemoteCommunication::NewStub(channel)) {}
+    ClientNode(shared_ptr<Channel> channel)
+        : _stub(RemoteCommunication::NewStub(channel))
+    {}
 
-    void AsyncProcessImage(const string& path) // 이름 바꿔야됨
+    void AsyncProcessVideo(const string& path) // 이름 바꿔야됨
     {        
+        VideoCapture cap(path);
+        _maker = new VideoMaker(cap);
         Mat frame;
         Mat nextFrame;
-
-        int seq=0;
-        string text;
-
-        VideoCapture cap(path);
         cap.read(frame);
 
-        while (cap.read(nextFrame))
+        int seq = 0;
+        bool eof = false;
+
+        while (!eof)
         {
-            // putText(frame, "No. " + to_string(seq++), Point(50, 100), 1, 4, Scalar(200, 200, 200), 3, 8);
-            _images.push_back(frame);
+            _maker->PushBack(frame);
+            eof = !cap.read(nextFrame);
+
+            
+
             AsyncClientCall* call = new AsyncClientCall;
             ProtoMat request = ConvertMatToProtoMat(frame);
-            cout << seq << endl;
+            
             request.set_seq(seq++);
+            request.set_eof(eof);
             
             call->response_reader = _stub->PrepareAsyncProcessYOLO(&call->context, request, &_cq);
-
             call->response_reader->StartCall();
-
             call->response_reader->Finish(&call->response, &call->status, (void*)call);
 
             frame = nextFrame;
@@ -84,43 +154,37 @@ public:
 
             if (call->status.ok())
             {
-                DetectedList result = call->response;
-
-                Scalar color(200, 200, 200);
-                for (auto i : result.boxes())
-                {
-                //     cout << result.seq() << " (";
-                //     cout << i.tl_x() << ", " ;
-                //     cout << i.tl_y() << ", " ;
-                //     cout << i.width() << ", " ; 
-                //     cout << i.height() << ", " ; 
-                //     cout << i.classname() << ", " ; 
-                //     cout << (int)(100 * i.confidence()) << ")\n" ; 
-                    Rect rect(i.tl_x(), i.tl_y(), i.width(), i.height());
-                    rectangle(_images[result.seq()], rect, color, 1);
-                }
-
-                imshow("test", _images[result.seq()]);
-                waitKey(1000/25);
+                cout << "SEQ : " << call->response.seq();
+                cout << "   EOF : " << call->response.eof() << endl;
+                vector<BoundingBox> boxes(call->response.boxes().begin(), call->response.boxes().end());
+                _maker->PushBack(boxes);
             }
+
+            if (call->response.eof())
+                break;
 
             delete call;
         }
         cout << "End of File!\n";
     }
 
+    auto GetVideoMaker() -> VideoMaker*
+    {
+        return _maker;
+    }
+
 private:
     struct AsyncClientCall 
     {
-        DetectedList response;
+        DetectedBoxList response;
         ClientContext context;
         Status status;
-        unique_ptr<ClientAsyncResponseReader<DetectedList>> response_reader;
+        unique_ptr<ClientAsyncResponseReader<DetectedBoxList>> response_reader;
     };
     unique_ptr<RemoteCommunication::Stub> _stub;
     CompletionQueue _cq;
 
-    vector<cv::Mat> _images;
+    VideoMaker* _maker;
 };
 
 int main(int argc, char** argv)
@@ -132,14 +196,22 @@ int main(int argc, char** argv)
     args.SetMaxReceiveMessageSize(1024 * 1024 * 1024);
     args.SetMaxSendMessageSize(1024 * 1024 * 1024);
 
+
     ClientNode service(grpc::CreateCustomChannel(target_str, grpc::InsecureChannelCredentials(), args));
-
     thread t(&ClientNode::AsyncCompleteRpc, &service);
+    
+    service.AsyncProcessVideo(absl::GetFlag(FLAGS_video_path));
 
-    service.AsyncProcessImage(absl::GetFlag(FLAGS_video_path));
-
-    cout << "Complete request video" << endl;
     t.join();
+
+    cout << "Complete!\n";
+    // auto images = service.GetVideoMaker()->GetImages();
+    // cout << images.size() << endl;
+    // for (auto& img : images)
+    // {
+    //     imshow("test", img);
+    //     waitKey(1000/25);
+    // } 
 
     return 0;
 }

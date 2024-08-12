@@ -39,14 +39,14 @@ auto MediaHandler::ConvertProtoMatToMat(const ProtoMat& protoMat) -> cv::Mat
 
 auto MediaHandler::ConvertMatToProtoMat(cv::Mat image) -> ProtoMat
 {
-    ProtoMat result;
+    ProtoMat output;
     string buffer("");
     
-    result.set_width(image.size().width);
-    result.set_height(image.size().height);
-    result.set_channels(image.channels());
-    result.set_type(image.type());
-    result.set_seq(result.seq() + 1);
+    output.set_width(image.size().width);
+    output.set_height(image.size().height);
+    output.set_channels(image.channels());
+    output.set_type(image.type());
+    output.set_seq(output.seq() + 1);
     
     for (auto row=0 ; row<image.rows ; row++)
     {
@@ -67,7 +67,7 @@ auto MediaHandler::ConvertMatToProtoMat(cv::Mat image) -> ProtoMat
         }
     }
 
-    result.set_buffer(buffer); 
+    output.set_buffer(buffer); 
     
-    return result;
+    return output;
 }

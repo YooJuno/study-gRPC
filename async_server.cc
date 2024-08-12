@@ -27,7 +27,7 @@ using grpc::ServerCompletionQueue;
 
 using remote::RemoteCommunication;
 using remote::ProtoMat;
-using remote::DetectedList;
+using remote::DetectedBoxList;
 
 using namespace std;
 
@@ -48,7 +48,7 @@ public:
 
     void Run(uint16_t port) 
     {
-        std::string _serveraddress = absl::StrFormat("0.0.0.0:%d", port);
+        string _serveraddress = absl::StrFormat("0.0.0.0:%d", port);
         ServerBuilder builder;
     
         builder.AddListeningPort(_serveraddress, grpc::InsecureServerCredentials());
@@ -57,7 +57,7 @@ public:
         _cq = builder.AddCompletionQueue();
         _server = builder.BuildAndStart();
 
-        std::cout << "Server listening on " << _serveraddress << std::endl;
+        cout << "Server listening on " << _serveraddress << endl;
 
         HandleRpcs();
     }
@@ -93,7 +93,6 @@ private:
             if (_status == CREATE) 
             {
                 _service->RequestProcessYOLO(&_ctx, &_request, &_responder, _cq, _cq, this);
-
                 _status = PROCESS;
             }
             else if (_status == PROCESS) 
@@ -101,17 +100,20 @@ private:
                 new CallData(_service, _cq, _eof ? 0 : _seq + 1);
 
                 cv::Mat frame(ConvertProtoMatToMat(_request));
-                _response = yolo.DetectObject(frame);
-                _response.set_seq(_request.seq());
-                cout << _request.seq() << endl;
-                _responder.Finish(_response, Status::OK, this);
-                
+                DetectedBoxList response = yolo.DetectObjectBoxes(frame);
+
+                response.set_seq(_request.seq());
+                response.set_eof(_request.eof());
+
+                cout << "SEQ : " << response.seq();
+                cout << "   EOF : " << response.eof() << endl;
+
+                _responder.Finish(response, Status::OK, this);
                 _status = FINISH;
             }
             else
             {
                 CHECK_EQ(_status, FINISH);
-
                 delete this;
             }
         }
@@ -120,9 +122,8 @@ private:
         RemoteCommunication::AsyncService* _service;
         ServerCompletionQueue* _cq;
         ProtoMat _request;
-        DetectedList _response;
 
-        ServerAsyncResponseWriter<DetectedList> _responder;
+        ServerAsyncResponseWriter<DetectedBoxList> _responder;
         ServerContext _ctx;
 
         enum CallStatus { CREATE, PROCESS, FINISH };
@@ -132,9 +133,9 @@ private:
         int _eof = false;
     };
 
-    std::unique_ptr<ServerCompletionQueue> _cq;
+    unique_ptr<ServerCompletionQueue> _cq;
     RemoteCommunication::AsyncService _service;
-    std::unique_ptr<Server> _server;
+    unique_ptr<Server> _server;
 };
 
 int main(int argc, char** argv) 
