@@ -1,11 +1,27 @@
-# gRPC를 활용한 파일 송수신 프로그램
+# gRPC Study during GMD SOFT Internship Period
 
-## 구현 환경
+## OS
+- Linux , MacOS
 
-- Ubuntu 20.04 이상
-- macOS 14
+## Libraries
+- OpenCV4
+- YOLOv4
 
-## Installation
+## Version
+- v1.0
+  - https://github.com/YooJuno/study-gRPC/tree/v1.0_File-Download-Sync
+- v1.1
+  - https://github.com/YooJuno/study-gRPC/tree/v1.1_File-Download-Sync-Stream
+- v2.0
+  - https://github.com/YooJuno/study-gRPC/tree/v2.0_Mat-Sync
+- v2.1
+  - https://github.com/YooJuno/study-gRPC/tree/v2.1_Mat-Callback
+- v2.2
+  - https://github.com/YooJuno/study-gRPC/tree/v2.2_Mat-Async
+- v3.0
+  - https://github.com/YooJuno/study-gRPC/tree/v3.0_gRPC-Final
+
+## Installation gRPC
 
 ### Setup
 
@@ -91,55 +107,6 @@ make -j 8
 make install
 popd
 ```
-
-### Clone and Build this Repository
-
-```bash
-cd ~
-git clone https://github.com/YooJuno/study-gRPC
-cd study-gRPC
-mkdir build
-cd build
-cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local  ..
-make -j 8
-```
-
-## **Try it!**
-
-### SERVER
-
-- ./remote_server  <DATASET_FOLDER_PATH>
-
-```bash
-./remote_server ../dataset/
-```
-
-
-![Untitled](images/Untitled%207.png)
-
-### CLIENT
-
-- ./remote_client <DOWNLOAD_FOLDER_PATH>
-```bash
-mkdir ../download
-./remote_client ../download/
-```
-    
-- Choose number you wanna download.
-    
-    ![Untitled](images/Untitled%202.png)
-    
-
-- Then you can see the information of file you select.
-    
-    ![Untitled](images/Untitled%203.png)
-    
-
-- You can see the file in Download folder
-    
-    ![Untitled](images/Untitled%205.png)
-    
-    ![Untitled](images/Untitled%206.png)
     
 
 ### Reference
