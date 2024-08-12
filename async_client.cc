@@ -42,15 +42,17 @@ public:
     VideoMaker(VideoCapture cap)
         : _cap(cap)
     {   
-        _width      = cap.get(CAP_PROP_FPS);
-	    _height     = cap.get(CAP_PROP_FRAME_WIDTH);
-	    _fps        = cap.get(CAP_PROP_FRAME_HEIGHT);
+        _fps      = cap.get(CAP_PROP_FPS);
+	    _width     = cap.get(CAP_PROP_FRAME_WIDTH);
+	    _height        = cap.get(CAP_PROP_FRAME_HEIGHT);
         _count      = cap.get(CAP_PROP_FRAME_COUNT);
     }
 
     void PushBack(Mat image)
     {
         _images.push_back(image);
+        // imshow("test", _images.back());
+        // waitKey(0);
     }
 
     void PushBack(vector<BoundingBox> boxes)
@@ -58,28 +60,25 @@ public:
         _boxes.push_back(boxes);
     }
 
-    void EncodeAndSave(const string& outputVideoPath)
+    void EncodeAndSaveTo(string outputVideoPath)
     {
-        VideoWriter output(outputVideoPath, VideoWriter::fourcc('M', 'P', '4', 'V'), _fps , Size(_width, _height), true);
+        // VideoWriter output(outputVideoPath, VideoWriter::fourcc('m', 'p', '4', 'v'), _fps , Size(_width, _height), true);
         
-        if (!output.isOpened())
-        {
-            cout << "에러 처리 요망\n" << endl;
-            return ;
-        }
+        // if (!output.isOpened())
+        // {
+        //     cout << "에러 처리 요망\n" << endl;
+        //     return ;
+        // }
+
+        // cout << "size : " << _images.size() << endl;
         
-        for(auto& img : _images)
-            output << img;
-    }
+        // for(auto img : _images)
+        // {
+        //     // output << img;
+        //     imshow("test", img);
+        //     waitKey(1000/25);
+        // }
 
-    auto GetImageWithIndex(int idx) -> Mat
-    {   
-        return _images[idx];
-    }
-
-    void ReplaceImageWith(Mat substitute, int idx)
-    {
-        _images[idx] = substitute;
     }
 
     auto GetImages() -> vector<Mat>
@@ -112,7 +111,7 @@ public:
     void AsyncProcessVideo(const string& path) // 이름 바꿔야됨
     {        
         VideoCapture cap(path);
-        _maker = new VideoMaker(cap);
+        // _maker = new VideoMaker(cap);
         Mat frame;
         Mat nextFrame;
         cap.read(frame);
@@ -122,10 +121,9 @@ public:
 
         while (!eof)
         {
-            _maker->PushBack(frame);
+            // _maker->PushBack(frame);
+            _images.push_back(frame);
             eof = !cap.read(nextFrame);
-
-            
 
             AsyncClientCall* call = new AsyncClientCall;
             ProtoMat request = ConvertMatToProtoMat(frame);
@@ -157,7 +155,7 @@ public:
                 cout << "SEQ : " << call->response.seq();
                 cout << "   EOF : " << call->response.eof() << endl;
                 vector<BoundingBox> boxes(call->response.boxes().begin(), call->response.boxes().end());
-                _maker->PushBack(boxes);
+                // _maker->PushBack(boxes);
             }
 
             if (call->response.eof())
@@ -166,11 +164,17 @@ public:
             delete call;
         }
         cout << "End of File!\n";
+
+        // for(auto& img : _images)
+        // {
+        //     imshow("test", img);
+        //     waitKey(0);
+        // }
     }
 
-    auto GetVideoMaker() -> VideoMaker*
+    auto GetImages() -> vector<Mat>
     {
-        return _maker;
+        return _images;
     }
 
 private:
@@ -183,8 +187,8 @@ private:
     };
     unique_ptr<RemoteCommunication::Stub> _stub;
     CompletionQueue _cq;
-
-    VideoMaker* _maker;
+    vector<Mat> _images;
+    // VideoMaker* _maker;
 };
 
 int main(int argc, char** argv)
@@ -196,7 +200,6 @@ int main(int argc, char** argv)
     args.SetMaxReceiveMessageSize(1024 * 1024 * 1024);
     args.SetMaxSendMessageSize(1024 * 1024 * 1024);
 
-
     ClientNode service(grpc::CreateCustomChannel(target_str, grpc::InsecureChannelCredentials(), args));
     thread t(&ClientNode::AsyncCompleteRpc, &service);
     
@@ -205,13 +208,14 @@ int main(int argc, char** argv)
     t.join();
 
     cout << "Complete!\n";
-    // auto images = service.GetVideoMaker()->GetImages();
+    // service.GetVideoMaker()->EncodeAndSaveTo("output.mp4");
     // cout << images.size() << endl;
-    // for (auto& img : images)
-    // {
-    //     imshow("test", img);
-    //     waitKey(1000/25);
-    // } 
+    vector<Mat> images = service.GetImages();
+    for (Mat i : images)
+    {
+        imshow("test", i);
+        waitKey(1000/25);
+    }
 
     return 0;
 }
