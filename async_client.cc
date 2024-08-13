@@ -1,7 +1,3 @@
-#include <opencv4/opencv2/opencv.hpp>
-#include "remote_message.grpc.pb.h"
-#include "media_handler.h"
-
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/check.h"
@@ -9,23 +5,25 @@
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
 
+#include <opencv4/opencv2/opencv.hpp>
+#include "remote_message.grpc.pb.h"
+#include "media_handler.h"
+#include "video_maker.h"
+
 #include <iostream>
-#include <memory>
 #include <string>
-#include <thread>
 #include <vector>
+#include <thread>
 
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-
 using grpc::ClientAsyncResponseReader;
 using grpc::CompletionQueue;
 
 using remote::RemoteCommunication;
 using remote::ProtoMat;
 using remote::YoloData;
-using remote::BoundingBox;
 
 using namespace std;
 using namespace cv;
@@ -37,106 +35,6 @@ ABSL_FLAG(string, input_video_path, "../dataset/input_long.mp4", "Input video pa
 ABSL_FLAG(string, output_video_path, "../dataset/output.avi", "Output video path"); // codec 문제로 확장자를 .avi로 하였음
 ABSL_FLAG(uint32_t, job, 1, "Job(0:Circle , 1:YOLO)");
 
-void PrintProgress(int currentSize, int totalSize)
-{   
-    cout << "Processing " ;
-    cout << "[";
-    auto progressBarLength = 50;
-    for(auto i=0; i<progressBarLength ; i++)
-    {
-        if (i<(int)((currentSize/(float)totalSize)*progressBarLength))
-            cout << "#";
-        else
-            cout << " ";
-    }
-    cout << "]\r";
-
-    if (currentSize/totalSize == 1) cout << "\n";
-}
-
-class VideoMaker
-{
-public:
-    VideoMaker(VideoCapture cap)
-        : _cap(cap)
-    {   
-        _fps        = cap.get(CAP_PROP_FPS);
-	    _width      = cap.get(CAP_PROP_FRAME_WIDTH);
-	    _height     = cap.get(CAP_PROP_FRAME_HEIGHT);
-        _count      = cap.get(CAP_PROP_FRAME_COUNT);
-        _colors = {Scalar(255, 255, 0), Scalar(0, 255, 0), Scalar(0, 255, 255), Scalar(255, 0, 0), Scalar(100,255,100)};
-    }
-
-    void PlayVideo()
-    {
-        cout << "Video Play\n";
-
-        for(const auto& image : _images)
-        {
-            imshow("video", image);
-            if (waitKey(1000/_fps) == 27 /* ESC */) 
-                break;
-        }
-
-        destroyWindow("video");
-    }
-
-    void SaveVideoTo(const string& path)
-    {
-        cout << "Saving video to " + path << endl;
-        VideoWriter videowriter(path, VideoWriter::fourcc('X', 'V', 'I', 'D'), _fps , Size(_width, _height), true);
-
-        if (!videowriter.isOpened())
-            return;
-
-        for(const auto& image : _images)
-            videowriter << image;
-
-        cout << "Complete!" << endl;
-    }
-
-    void MergeYoloDataToImage()
-    {
-        for(auto& yolo : _yoloDataList)
-        {
-            for (int i = 0; i < yolo.boxes_size(); i++)
-            {
-                Rect box(yolo.boxes(i).tl_x(), yolo.boxes(i).tl_y(), yolo.boxes(i).width(), yolo.boxes(i).height());
-                Rect textBox(yolo.boxes(i).tl_x(), yolo.boxes(i).tl_y() - 20, yolo.boxes(i).width(), 20);
-                const auto color = _colors[yolo.boxes(i).classid() % _colors.size()];
-                rectangle(_images[yolo.seq()], box, color, 2);
-                rectangle(_images[yolo.seq()], textBox, color, FILLED);
-                putText(_images[yolo.seq()], yolo.boxes(i).classname(), Point(yolo.boxes(i).tl_x(), yolo.boxes(i).tl_y() - 5), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0));
-            }
-        }
-    }
-
-    void PushBack(const Mat& image)
-    {
-        _images.push_back(image.clone());
-    }
-
-    void PushBack(YoloData yolo)
-    {
-        _yoloDataList.push_back(yolo);
-    }
-
-    int GetTotalCount()
-    {
-        return _count;
-    }
-
-private:
-    vector<YoloData> _yoloDataList;
-    vector<Scalar> _colors;
-    vector<Mat> _images;
-    VideoCapture _cap;
-
-    int _width;
-    int _height;
-    int _fps;
-    int _count;
-};
 
 class ClientNode : public MediaHandler
 {
@@ -202,6 +100,23 @@ public:
         return _videoMaker;
     }
 
+    void PrintProgress(int currentSize, int totalSize)
+    {   
+        cout << "Processing " ;
+        cout << "[";
+        auto progressBarLength = 50;
+        for(auto i=0; i<progressBarLength ; i++)
+        {
+            if (i<(int)((currentSize/(float)totalSize)*progressBarLength))
+                cout << "#";
+            else
+                cout << " ";
+        }
+        cout << "]\r";
+
+        if (currentSize/totalSize == 1) cout << "\n";
+    }
+
 private:
     struct AsyncClientCall 
     {
@@ -232,7 +147,7 @@ int main(int argc, char** argv)
     t.join();
 
     auto videoMaker = service.GetVideoMaker();
-    videoMaker->MergeYoloDataToImage();
+    videoMaker->MergeYoloDataToVideo();
     videoMaker->PlayVideo();
     videoMaker->SaveVideoTo(absl::GetFlag(FLAGS_output_video_path));
 
