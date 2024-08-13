@@ -14,8 +14,6 @@
 
 #include <iostream>
 #include <string>
-#include <thread>
-#include <mutex>
 
 using grpc::Server;
 using grpc::ServerBuilder;
