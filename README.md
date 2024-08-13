@@ -1,44 +1,49 @@
-# gRPC를 활용한 원격 영상처리 프로그램
+# gRPC를 활용한 원격 영상 처리 프로그램
 
-### Clone and Build this Repository
+## **Clone & Build this Repository**
 
-```bash
+```
 cd ~
 git clone --branch v3.0_gRPC-Final https://github.com/YooJuno/study-gRPC.git
 cd study-gRPC
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local  ../CMakeLists.txt -B .
+cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local  ../CMakeLists -B .
 make -j 8
 ```
 
-## **Try it!**
+# **Try it!**
 
-### SERVER
-
-- ./remote_server
+## **SERVER**
 
 ```bash
 ./remote_server
 ```
-![alt text](images/image.png)    
 
-### CLIENT
+!https://github.com/YooJuno/study-gRPC/raw/v3.0_gRPC-Final/images/image.png
 
-- ./remote_client   <VIDEO_PATH>   <CIRCLE:0 , YOLO:1>
-```bash
-./remote_client
+## **CLIENT**
+
+### **./remote_client    --input_video_path=<…>     --output_video_path=<…>**
+
 ```
-![alt text](images/image-1.png)
+./async_client
+```
 
+- You don’t need to put arguments. It has a default values for args.
 
-- You can see the processed picture by server
+## Result
 
-    ![alt text](images/image-2.png)
+!https://github.com/YooJuno/study-gRPC/raw/v3.0_gRPC-Final/images/image-1.png
 
-    
+![image.png](images/image-1.png)
+- Press ESC key if you wanna quit player.
 
-### Reference
+![image.png](images/image-2.png)
+
+![image.png](images/image-3.png)
+
+**Reference**
 
 https://grpc.io/docs/languages/cpp/quickstart/
 
