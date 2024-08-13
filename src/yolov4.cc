@@ -7,7 +7,7 @@
 
 using remote::ProtoMat;
 using remote::YoloData;
-using remote::BoundingBox;
+using remote::Object;
 using namespace std;
 
 YOLOv4::YOLOv4() 
@@ -73,15 +73,15 @@ auto YOLOv4::DetectYOLO(cv::Mat frame) -> YoloData
 
     for (auto i = 0; i < detections; ++i) 
     {
-        BoundingBox* object = objects.add_boxes();
+        Object* obj = objects.add_objects();
         
-        object->set_classname(_classList[classIds[i]]);
-        object->set_classid(classIds[i]);
-        object->set_confidence(confidences[i]);
-        object->set_tl_x(rects[i].x);
-        object->set_tl_y(rects[i].y);
-        object->set_width(rects[i].width);
-        object->set_height(rects[i].height);
+        obj->set_classname(_classList[classIds[i]]);
+        obj->set_classid(classIds[i]);
+        obj->set_confidence(confidences[i]);
+        obj->set_tl_x(rects[i].x);
+        obj->set_tl_y(rects[i].y);
+        obj->set_width(rects[i].width);
+        obj->set_height(rects[i].height);
     }   
 
     return objects;
