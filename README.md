@@ -13,7 +13,6 @@
 
 ## Libraries
 - OpenCV4
-- YOLOv4
 - Protocol buffer
 
 # Installation gRPC
