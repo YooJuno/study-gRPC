@@ -21,7 +21,7 @@ message ProtoMat
     bool eof = 8;
 }
 
-message BoundingBox
+message Object
 {
     uint32 tl_x = 2;
     uint32 tl_y = 3;
@@ -36,5 +36,5 @@ message YoloData // 임시 이름.
 {   
     uint32 seq = 1;
     uint32 eof = 2;
-    repeated BoundingBox boxes = 3;
+    repeated Object Objects = 3;
 }
