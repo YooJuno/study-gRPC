@@ -8,7 +8,7 @@ git clone --branch v3.0_gRPC-Final https://github.com/YooJuno/study-gRPC.git
 cd study-gRPC
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local  ../CMakeLists -B .
+cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local  ../CMakeLists.txt -B .
 make -j 8
 ```
 
