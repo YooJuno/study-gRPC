@@ -1,7 +1,7 @@
 #ifndef MEDIA_H
 #define MEDIA_H 
 
-class MediaHandler
+class ImageHandler
 {
 public:
     auto ConvertProtoMatToMat(const remote::ProtoMat&) -> cv::Mat;

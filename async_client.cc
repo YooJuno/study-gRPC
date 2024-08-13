@@ -7,8 +7,8 @@
 
 #include <opencv4/opencv2/opencv.hpp>
 #include "remote_message.grpc.pb.h"
-#include "media_handler.h"
-#include "video_maker.h"
+#include "image_handler.h"
+#include "video_handler.h"
 
 #include <iostream>
 #include <string>
@@ -36,7 +36,7 @@ ABSL_FLAG(string, output_video_path, "../dataset/output.avi", "Output video path
 ABSL_FLAG(uint32_t, job, 1, "Job(0:Circle , 1:YOLO)");
 
 
-class ClientNode : public MediaHandler
+class ClientNode : public ImageHandler
 {
 public:
     ClientNode(shared_ptr<Channel> channel)
@@ -46,7 +46,7 @@ public:
     void RunAsyncVideoProcessing(const string& path)
     {        
         VideoCapture cap(path);
-        _videoMaker = new VideoMaker(cap);
+        _videoHandler = new VideoHandler(cap);
         Mat frame;
         Mat nextFrame;
         cap.read(frame);
@@ -56,7 +56,7 @@ public:
 
         while (!eof)
         {
-            _videoMaker->PushBack(frame.clone());
+            _videoHandler->PushBack(frame.clone());
             eof = !cap.read(nextFrame);
 
             AsyncClientCall* call = new AsyncClientCall;
@@ -84,8 +84,8 @@ public:
 
             if (call->status.ok())
             {
-                _videoMaker->PushBack(call->response);
-                PrintProgress(call->response.seq(), _videoMaker->GetTotalCount() - 1);
+                _videoHandler->PushBack(call->response);
+                PrintProgress(call->response.seq(), _videoHandler->GetTotalCount() - 1);
             }
 
             if (call->response.eof())
@@ -95,9 +95,9 @@ public:
         }
     }
 
-    auto GetVideoMaker() -> VideoMaker*
+    auto GetVideoHandler() -> VideoHandler*
     {
-        return _videoMaker;
+        return _videoHandler;
     }
 
     void PrintProgress(int currentSize, int totalSize)
@@ -127,7 +127,7 @@ private:
     };
     unique_ptr<RemoteCommunication::Stub> _stub;
     CompletionQueue _cq;
-    VideoMaker* _videoMaker;
+    VideoHandler* _videoHandler;
 };
 
 int main(int argc, char** argv)
@@ -146,10 +146,10 @@ int main(int argc, char** argv)
 
     t.join();
 
-    auto videoMaker = service.GetVideoMaker();
-    videoMaker->MergeYoloDataToVideo();
-    videoMaker->PlayVideo();
-    videoMaker->SaveVideoTo(absl::GetFlag(FLAGS_output_video_path));
+    auto videoHandler = service.GetVideoHandler();
+    videoHandler->MergeYoloDataToVideo();
+    videoHandler->PlayVideo();
+    videoHandler->SaveVideoTo(absl::GetFlag(FLAGS_output_video_path));
 
     return 0;
 }

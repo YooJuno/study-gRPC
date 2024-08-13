@@ -9,7 +9,7 @@
 
 #include <opencv4/opencv2/opencv.hpp>
 #include "remote_message.grpc.pb.h"
-#include "media_handler.h"
+#include "image_handler.h"
 #include "yolov4.h"
 
 #include <iostream>
@@ -77,7 +77,7 @@ private:
         }
     }
 
-    class CallData : public MediaHandler
+    class CallData : public ImageHandler
     {
     public:
         CallData(RemoteCommunication::AsyncService* service, ServerCompletionQueue* cq, int seq)

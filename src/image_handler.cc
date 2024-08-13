@@ -1,7 +1,7 @@
 #include <iostream>
 #include <opencv4/opencv2/opencv.hpp>
 #include "remote_message.grpc.pb.h"
-#include "media_handler.h"
+#include "image_handler.h"
 
 using remote::ProtoMat;
 using namespace std;
@@ -9,7 +9,7 @@ using namespace std;
 #define COLOR 3
 #define GRAY 1
 
-auto MediaHandler::ConvertProtoMatToMat(const ProtoMat& protoMat) -> cv::Mat
+auto ImageHandler::ConvertProtoMatToMat(const ProtoMat& protoMat) -> cv::Mat
 {
     cv::Mat image = cv::Mat(cv::Size(protoMat.width(), protoMat.height()), protoMat.type());
     string serializedMatrix(protoMat.buffer());
@@ -37,7 +37,7 @@ auto MediaHandler::ConvertProtoMatToMat(const ProtoMat& protoMat) -> cv::Mat
     return image;
 }
 
-auto MediaHandler::ConvertMatToProtoMat(cv::Mat image) -> ProtoMat
+auto ImageHandler::ConvertMatToProtoMat(cv::Mat image) -> ProtoMat
 {
     ProtoMat output;
     string buffer("");

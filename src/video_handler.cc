@@ -3,7 +3,7 @@
 #include <opencv4/opencv2/opencv.hpp>
 
 #include "remote_message.grpc.pb.h"
-#include "video_maker.h"
+#include "video_handler.h"
 
 using remote::YoloData;
 using remote::Object;
@@ -11,7 +11,7 @@ using remote::Object;
 using namespace std;
 using namespace cv;
 
-VideoMaker::VideoMaker(VideoCapture cap)
+VideoHandler::VideoHandler(VideoCapture cap)
     : _cap(cap)
 {   
     _fps        = cap.get(CAP_PROP_FPS);
@@ -21,7 +21,7 @@ VideoMaker::VideoMaker(VideoCapture cap)
     _colors = {Scalar(255, 255, 0), Scalar(0, 255, 0), Scalar(0, 255, 255), Scalar(255, 0, 0), Scalar(100,255,100)};
 }
 
-void VideoMaker::PlayVideo()
+void VideoHandler::PlayVideo()
 {
     cout << "Video Play\n";
 
@@ -35,7 +35,7 @@ void VideoMaker::PlayVideo()
     destroyWindow("video");
 }
 
-void VideoMaker::SaveVideoTo(const string& path)
+void VideoHandler::SaveVideoTo(const string& path)
 {
     cout << "Saving video " + path << endl;
     VideoWriter videowriter(path, VideoWriter::fourcc('X', 'V', 'I', 'D'), _fps , Size(_width, _height), true);
@@ -49,7 +49,7 @@ void VideoMaker::SaveVideoTo(const string& path)
     cout << "Complete!" << endl;
 }
 
-void VideoMaker::MergeYoloDataToVideo()
+void VideoHandler::MergeYoloDataToVideo()
 {
     for(auto& yolo : _yoloDataList)
     {
@@ -65,17 +65,17 @@ void VideoMaker::MergeYoloDataToVideo()
     }
 }
 
-void VideoMaker::PushBack(const Mat& image)
+void VideoHandler::PushBack(const Mat& image)
 {
     _images.push_back(image.clone());
 }
 
-void VideoMaker::PushBack(YoloData yolo)
+void VideoHandler::PushBack(YoloData yolo)
 {
     _yoloDataList.push_back(yolo);
 }
 
-int VideoMaker::GetTotalCount()
+int VideoHandler::GetTotalCount()
 {
     return _count;
 }

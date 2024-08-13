@@ -1,10 +1,10 @@
 #ifndef VIDEO_H
 #define VIDEO_H 
 
-class VideoMaker
+class VideoHandler
 {
 public:
-    VideoMaker(cv::VideoCapture);
+    VideoHandler(cv::VideoCapture);
     void PlayVideo(void);
     void SaveVideoTo(const std::string&);
     void MergeYoloDataToVideo();
