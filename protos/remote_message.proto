@@ -4,7 +4,7 @@ package remote;
 
 service RemoteCommunication
 {
-    rpc ProcessYOLO (ProtoMat) returns (DetectedBoxList) {}
+    rpc ProcessYOLO (ProtoMat) returns (YoloData) {}
 }
 
 message Empty {}
@@ -28,10 +28,11 @@ message BoundingBox
     uint32 width = 4;
     uint32 height = 5;
     string classname = 6;
-    float confidence = 7;
+    uint32 classid = 7;
+    float confidence = 8;
 }
 
-message DetectedBoxList // 임시 이름.
+message YoloData // 임시 이름.
 {   
     uint32 seq = 1;
     uint32 eof = 2;
