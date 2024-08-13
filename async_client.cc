@@ -37,6 +37,23 @@ ABSL_FLAG(string, input_video_path, "../dataset/input_long.mp4", "Input video pa
 ABSL_FLAG(string, output_video_path, "../dataset/output.avi", "Output video path"); // codec 문제로 확장자를 .avi로 하였음
 ABSL_FLAG(uint32_t, job, 1, "Job(0:Circle , 1:YOLO)");
 
+void PrintProgress(int currentSize, int totalSize)
+{   
+    cout << "Processing " ;
+    cout << "[";
+    auto progressBarLength = 50;
+    for(auto i=0; i<progressBarLength ; i++)
+    {
+        if (i<(int)((currentSize/(float)totalSize)*progressBarLength))
+            cout << "#";
+        else
+            cout << " ";
+    }
+    cout << "]\r";
+
+    if (currentSize/totalSize == 1) cout << "\n";
+}
+
 class VideoMaker
 {
 public:
@@ -52,16 +69,21 @@ public:
 
     void PlayVideo()
     {
+        cout << "Video Play\n";
+
         for(const auto& image : _images)
         {
             imshow("video", image);
-            waitKey(1000/_fps);
+            if (waitKey(1000/_fps) == 27 /* ESC */) 
+                break;
         }
+
         destroyWindow("video");
     }
 
     void SaveVideoTo(const string& path)
     {
+        cout << "Saving video to " + path << endl;
         VideoWriter videowriter(path, VideoWriter::fourcc('X', 'V', 'I', 'D'), _fps , Size(_width, _height), true);
 
         if (!videowriter.isOpened())
@@ -69,6 +91,8 @@ public:
 
         for(const auto& image : _images)
             videowriter << image;
+
+        cout << "Complete!" << endl;
     }
 
     void MergeYoloDataToImage()
@@ -95,6 +119,11 @@ public:
     void PushBack(YoloData yolo)
     {
         _yoloDataList.push_back(yolo);
+    }
+
+    int GetTotalCount()
+    {
+        return _count;
     }
 
 private:
@@ -146,7 +175,7 @@ public:
         }
     }
 
-    void ReceiveResponse()
+    void WaitToReceiveResponse()
     {
         void* got_tag;
         bool ok = false;
@@ -155,16 +184,17 @@ public:
         {
             AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
 
-
             if (call->status.ok())
+            {
                 _videoMaker->PushBack(call->response);
+                PrintProgress(call->response.seq(), _videoMaker->GetTotalCount() - 1);
+            }
 
             if (call->response.eof())
                 break;
 
             delete call;
         }
-        cout << "End of File!\n";
     }
 
     auto GetVideoMaker() -> VideoMaker*
@@ -195,7 +225,7 @@ int main(int argc, char** argv)
     args.SetMaxSendMessageSize(1024 * 1024 * 1024);
 
     ClientNode service(grpc::CreateCustomChannel(target_str, grpc::InsecureChannelCredentials(), args));
-    thread t(&ClientNode::ReceiveResponse, &service);
+    thread t(&ClientNode::WaitToReceiveResponse, &service);
     
     service.RunAsyncVideoProcessing(absl::GetFlag(FLAGS_input_video_path));
 
