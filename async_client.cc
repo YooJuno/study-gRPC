@@ -33,7 +33,8 @@ using namespace cv;
 // [Argument option]
 // It can be seen with "--help" option
 ABSL_FLAG(string, target, "localhost:50051", "Server address");
-ABSL_FLAG(string, video_path, "../dataset/input_long.mp4", "Input video path");
+ABSL_FLAG(string, input_video_path, "../dataset/input_long.mp4", "Input video path");
+ABSL_FLAG(string, output_video_path, "../dataset/output.avi", "Output video path"); // codec 문제로 확장자를 .avi로 하였음
 ABSL_FLAG(uint32_t, job, 1, "Job(0:Circle , 1:YOLO)");
 
 class VideoMaker
@@ -46,7 +47,7 @@ public:
 	    _width      = cap.get(CAP_PROP_FRAME_WIDTH);
 	    _height     = cap.get(CAP_PROP_FRAME_HEIGHT);
         _count      = cap.get(CAP_PROP_FRAME_COUNT);
-        _yoloColors = {Scalar(255, 255, 0), Scalar(0, 255, 0), Scalar(0, 255, 255), Scalar(255, 0, 0), Scalar(100,255,100)};
+        _colors = {Scalar(255, 255, 0), Scalar(0, 255, 0), Scalar(0, 255, 255), Scalar(255, 0, 0), Scalar(100,255,100)};
     }
 
     void PlayVideo()
@@ -61,16 +62,16 @@ public:
 
     void SaveVideoTo(const string& path)
     {
-        VideoWriter writer(path, VideoWriter::fourcc('X', 'V', 'I', 'D'), _fps , Size(_width, _height), true);
+        VideoWriter videowriter(path, VideoWriter::fourcc('X', 'V', 'I', 'D'), _fps , Size(_width, _height), true);
 
-        if (!writer.isOpened())
+        if (!videowriter.isOpened())
             return;
 
         for(const auto& image : _images)
-            writer << image;
+            videowriter << image;
     }
 
-    void MergeYoloDataWithImage()
+    void MergeYoloDataToImage()
     {
         for(auto& yolo : _yoloDataList)
         {
@@ -78,7 +79,7 @@ public:
             {
                 Rect box(yolo.boxes(i).tl_x(), yolo.boxes(i).tl_y(), yolo.boxes(i).width(), yolo.boxes(i).height());
                 Rect textBox(yolo.boxes(i).tl_x(), yolo.boxes(i).tl_y() - 20, yolo.boxes(i).width(), 20);
-                const auto color = _yoloColors[yolo.boxes(i).classid() % _yoloColors.size()];
+                const auto color = _colors[yolo.boxes(i).classid() % _colors.size()];
                 rectangle(_images[yolo.seq()], box, color, 2);
                 rectangle(_images[yolo.seq()], textBox, color, FILLED);
                 putText(_images[yolo.seq()], yolo.boxes(i).classname(), Point(yolo.boxes(i).tl_x(), yolo.boxes(i).tl_y() - 5), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0));
@@ -86,12 +87,7 @@ public:
         }
     }
 
-    auto GetImages() -> vector<Mat>
-    {
-        return _images;
-    }
-
-    void PushBack(Mat image)
+    void PushBack(const Mat& image)
     {
         _images.push_back(image.clone());
     }
@@ -101,28 +97,11 @@ public:
         _yoloDataList.push_back(yolo);
     }
 
-    void PrintProgressToTerminal(int currentSize, int fullSize)
-    {   
-        auto progressBarLength = 40;
-        cout << "Downloading " ;
-        cout << "[";
-        for(auto i=0; i<progressBarLength ; i++)
-        {
-            if (i<(int)((currentSize/(float)fullSize)*progressBarLength))
-                cout << "#";
-            else
-                cout << " ";
-        }
-        cout << "]\r";
-
-        if (currentSize/fullSize == 1) cout << "\n";
-    }
-
 private:
     vector<YoloData> _yoloDataList;
-    VideoCapture _cap;
     vector<Mat> _images;
-    vector<Scalar> _yoloColors;
+    vector<Scalar> _colors;
+    VideoCapture _cap;
 
     int _width;
     int _height;
@@ -137,7 +116,7 @@ public:
         : _stub(RemoteCommunication::NewStub(channel))
     {}
 
-    void AsyncProcessVideo(const string& path) // 이름 바꿔야됨
+    void RunAsyncVideoProcessing(const string& path)
     {        
         VideoCapture cap(path);
         _videoMaker = new VideoMaker(cap);
@@ -167,7 +146,7 @@ public:
         }
     }
 
-    void AsyncCompleteRpc()
+    void ReceiveResponse()
     {
         void* got_tag;
         bool ok = false;
@@ -190,13 +169,9 @@ public:
             delete call;
         }
         cout << "End of File!\n";
-
-        _videoMaker->MergeYoloDataWithImage();
-        _videoMaker->PlayVideo();
-        _videoMaker->SaveVideoTo("../dataset/output.avi");
     }
 
-    auto GetMaker() -> VideoMaker*
+    auto GetVideoMaker() -> VideoMaker*
     {
         return _videoMaker;
     }
@@ -224,13 +199,16 @@ int main(int argc, char** argv)
     args.SetMaxSendMessageSize(1024 * 1024 * 1024);
 
     ClientNode service(grpc::CreateCustomChannel(target_str, grpc::InsecureChannelCredentials(), args));
-    thread t(&ClientNode::AsyncCompleteRpc, &service);
+    thread t(&ClientNode::ReceiveResponse, &service);
     
-    service.AsyncProcessVideo(absl::GetFlag(FLAGS_video_path));
+    service.RunAsyncVideoProcessing(absl::GetFlag(FLAGS_input_video_path));
 
     t.join();
 
-    cout << "Complete!\n";
+    auto videoMaker = service.GetVideoMaker();
+    videoMaker->MergeYoloDataToImage();
+    videoMaker->PlayVideo();
+    videoMaker->SaveVideoTo(absl::GetFlag(FLAGS_output_video_path));
 
     return 0;
 }
