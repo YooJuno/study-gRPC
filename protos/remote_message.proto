@@ -36,5 +36,5 @@ message YoloData // 임시 이름.
 {   
     uint32 seq = 1;
     uint32 eof = 2;
-    repeated Object Objects = 3;
+    repeated Object objects = 3;
 }
