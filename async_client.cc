@@ -54,10 +54,10 @@ public:
     {
         for(const auto& image : _images)
         {
-            imshow("test", image);
-            waitKey(10);
+            imshow("video", image);
+            waitKey(1000/_fps);
         }
-        destroyWindow("test");
+        destroyWindow("video");
     }
 
     void SaveVideoTo(const string& path)
@@ -99,8 +99,8 @@ public:
 
 private:
     vector<YoloData> _yoloDataList;
-    vector<Mat> _images;
     vector<Scalar> _colors;
+    vector<Mat> _images;
     VideoCapture _cap;
 
     int _width;
@@ -155,10 +155,6 @@ public:
         {
             AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
 
-            CHECK(ok);
-
-            cout << "SEQ : " << call->response.seq();
-            cout << "   EOF : " << call->response.eof() << endl;
 
             if (call->status.ok())
                 _videoMaker->PushBack(call->response);
