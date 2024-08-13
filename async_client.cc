@@ -24,7 +24,7 @@ using grpc::CompletionQueue;
 
 using remote::RemoteCommunication;
 using remote::ProtoMat;
-using remote::DetectedBoxList;
+using remote::YoloData;
 using remote::BoundingBox;
 
 using namespace std;
@@ -33,7 +33,7 @@ using namespace cv;
 // [Argument option]
 // It can be seen with "--help" option
 ABSL_FLAG(string, target, "localhost:50051", "Server address");
-ABSL_FLAG(string, video_path, "../dataset/video.mp4", "Video path");
+ABSL_FLAG(string, video_path, "../dataset/input_long.mp4", "Input video path");
 ABSL_FLAG(uint32_t, job, 1, "Job(0:Circle , 1:YOLO)");
 
 class VideoMaker
@@ -42,43 +42,48 @@ public:
     VideoMaker(VideoCapture cap)
         : _cap(cap)
     {   
-        _fps      = cap.get(CAP_PROP_FPS);
-	    _width     = cap.get(CAP_PROP_FRAME_WIDTH);
-	    _height        = cap.get(CAP_PROP_FRAME_HEIGHT);
+        _fps        = cap.get(CAP_PROP_FPS);
+	    _width      = cap.get(CAP_PROP_FRAME_WIDTH);
+	    _height     = cap.get(CAP_PROP_FRAME_HEIGHT);
         _count      = cap.get(CAP_PROP_FRAME_COUNT);
+        _yoloColors = {Scalar(255, 255, 0), Scalar(0, 255, 0), Scalar(0, 255, 255), Scalar(255, 0, 0), Scalar(100,255,100)};
     }
 
-    void PushBack(Mat image)
+    void PlayVideo()
     {
-        _images.push_back(image);
-        // imshow("test", _images.back());
-        // waitKey(0);
+        for(const auto& image : _images)
+        {
+            imshow("test", image);
+            waitKey(10);
+        }
+        destroyWindow("test");
     }
 
-    void PushBack(vector<BoundingBox> boxes)
+    void SaveVideoTo(const string& path)
     {
-        _boxes.push_back(boxes);
+        VideoWriter writer(path, VideoWriter::fourcc('X', 'V', 'I', 'D'), _fps , Size(_width, _height), true);
+
+        if (!writer.isOpened())
+            return;
+
+        for(const auto& image : _images)
+            writer << image;
     }
 
-    void EncodeAndSaveTo(string outputVideoPath)
+    void MergeYoloDataWithImage()
     {
-        // VideoWriter output(outputVideoPath, VideoWriter::fourcc('m', 'p', '4', 'v'), _fps , Size(_width, _height), true);
-        
-        // if (!output.isOpened())
-        // {
-        //     cout << "에러 처리 요망\n" << endl;
-        //     return ;
-        // }
-
-        // cout << "size : " << _images.size() << endl;
-        
-        // for(auto img : _images)
-        // {
-        //     // output << img;
-        //     imshow("test", img);
-        //     waitKey(1000/25);
-        // }
-
+        for(auto& yolo : _yoloDataList)
+        {
+            for (int i = 0; i < yolo.boxes_size(); i++)
+            {
+                Rect box(yolo.boxes(i).tl_x(), yolo.boxes(i).tl_y(), yolo.boxes(i).width(), yolo.boxes(i).height());
+                Rect textBox(yolo.boxes(i).tl_x(), yolo.boxes(i).tl_y() - 20, yolo.boxes(i).width(), 20);
+                const auto color = _yoloColors[yolo.boxes(i).classid() % _yoloColors.size()];
+                rectangle(_images[yolo.seq()], box, color, 2);
+                rectangle(_images[yolo.seq()], textBox, color, FILLED);
+                putText(_images[yolo.seq()], yolo.boxes(i).classname(), Point(yolo.boxes(i).tl_x(), yolo.boxes(i).tl_y() - 5), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0));
+            }
+        }
     }
 
     auto GetImages() -> vector<Mat>
@@ -86,14 +91,38 @@ public:
         return _images;
     }
 
-    // auto GetCap() -> VideoCapture
-    // {
+    void PushBack(Mat image)
+    {
+        _images.push_back(image.clone());
+    }
 
-    // }
+    void PushBack(YoloData yolo)
+    {
+        _yoloDataList.push_back(yolo);
+    }
+
+    void PrintProgressToTerminal(int currentSize, int fullSize)
+    {   
+        auto progressBarLength = 40;
+        cout << "Downloading " ;
+        cout << "[";
+        for(auto i=0; i<progressBarLength ; i++)
+        {
+            if (i<(int)((currentSize/(float)fullSize)*progressBarLength))
+                cout << "#";
+            else
+                cout << " ";
+        }
+        cout << "]\r";
+
+        if (currentSize/fullSize == 1) cout << "\n";
+    }
+
 private:
-    vector<vector<BoundingBox>> _boxes;
-    vector<Mat> _images;
+    vector<YoloData> _yoloDataList;
     VideoCapture _cap;
+    vector<Mat> _images;
+    vector<Scalar> _yoloColors;
 
     int _width;
     int _height;
@@ -111,7 +140,7 @@ public:
     void AsyncProcessVideo(const string& path) // 이름 바꿔야됨
     {        
         VideoCapture cap(path);
-        // _maker = new VideoMaker(cap);
+        _videoMaker = new VideoMaker(cap);
         Mat frame;
         Mat nextFrame;
         cap.read(frame);
@@ -121,8 +150,7 @@ public:
 
         while (!eof)
         {
-            // _maker->PushBack(frame);
-            _images.push_back(frame);
+            _videoMaker->PushBack(frame.clone());
             eof = !cap.read(nextFrame);
 
             AsyncClientCall* call = new AsyncClientCall;
@@ -150,13 +178,11 @@ public:
 
             CHECK(ok);
 
+            cout << "SEQ : " << call->response.seq();
+            cout << "   EOF : " << call->response.eof() << endl;
+
             if (call->status.ok())
-            {
-                cout << "SEQ : " << call->response.seq();
-                cout << "   EOF : " << call->response.eof() << endl;
-                vector<BoundingBox> boxes(call->response.boxes().begin(), call->response.boxes().end());
-                // _maker->PushBack(boxes);
-            }
+                _videoMaker->PushBack(call->response);
 
             if (call->response.eof())
                 break;
@@ -165,30 +191,27 @@ public:
         }
         cout << "End of File!\n";
 
-        // for(auto& img : _images)
-        // {
-        //     imshow("test", img);
-        //     waitKey(0);
-        // }
+        _videoMaker->MergeYoloDataWithImage();
+        _videoMaker->PlayVideo();
+        _videoMaker->SaveVideoTo("../dataset/output.avi");
     }
 
-    auto GetImages() -> vector<Mat>
+    auto GetMaker() -> VideoMaker*
     {
-        return _images;
+        return _videoMaker;
     }
 
 private:
     struct AsyncClientCall 
     {
-        DetectedBoxList response;
-        ClientContext context;
+        YoloData response;
         Status status;
-        unique_ptr<ClientAsyncResponseReader<DetectedBoxList>> response_reader;
+        ClientContext context;
+        unique_ptr<ClientAsyncResponseReader<YoloData>> response_reader;
     };
     unique_ptr<RemoteCommunication::Stub> _stub;
     CompletionQueue _cq;
-    vector<Mat> _images;
-    // VideoMaker* _maker;
+    VideoMaker* _videoMaker;
 };
 
 int main(int argc, char** argv)
@@ -208,14 +231,6 @@ int main(int argc, char** argv)
     t.join();
 
     cout << "Complete!\n";
-    // service.GetVideoMaker()->EncodeAndSaveTo("output.mp4");
-    // cout << images.size() << endl;
-    vector<Mat> images = service.GetImages();
-    for (Mat i : images)
-    {
-        imshow("test", i);
-        waitKey(1000/25);
-    }
 
     return 0;
 }

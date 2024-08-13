@@ -6,7 +6,7 @@
 #include "yolov4.h"
 
 using remote::ProtoMat;
-using remote::DetectedBoxList;
+using remote::YoloData;
 using remote::BoundingBox;
 using namespace std;
 
@@ -60,9 +60,9 @@ auto YOLOv4::LoadNet(const string& cfgPath, const string& weightsPath, bool is_c
     return result;
 }
 
-auto YOLOv4::DetectObjectBoxes(cv::Mat frame) -> DetectedBoxList
+auto YOLOv4::DetectYOLO(cv::Mat frame) -> YoloData
 {   
-    DetectedBoxList objects;
+    YoloData objects;
     std::vector<int> classIds;
     std::vector<float> confidences;
     std::vector<cv::Rect> rects;
@@ -76,6 +76,7 @@ auto YOLOv4::DetectObjectBoxes(cv::Mat frame) -> DetectedBoxList
         BoundingBox* object = objects.add_boxes();
         
         object->set_classname(_classList[classIds[i]]);
+        object->set_classid(classIds[i]);
         object->set_confidence(confidences[i]);
         object->set_tl_x(rects[i].x);
         object->set_tl_y(rects[i].y);

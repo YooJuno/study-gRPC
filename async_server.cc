@@ -27,7 +27,7 @@ using grpc::ServerCompletionQueue;
 
 using remote::RemoteCommunication;
 using remote::ProtoMat;
-using remote::DetectedBoxList;
+using remote::YoloData;
 
 using namespace std;
 
@@ -83,7 +83,7 @@ private:
     {
     public:
         CallData(RemoteCommunication::AsyncService* service, ServerCompletionQueue* cq, int seq)
-            : _service(service), _cq(cq), _responder(&_ctx), _status(CREATE), _seq(seq)
+            : _service(service), _cq(cq), _responder(&_ctx), _status(CREATE), _seq(seq), _eof(false)
         {
             Proceed();
         }
@@ -100,14 +100,10 @@ private:
                 new CallData(_service, _cq, _eof ? 0 : _seq + 1);
 
                 cv::Mat frame(ConvertProtoMatToMat(_request));
-                DetectedBoxList response = yolo.DetectObjectBoxes(frame);
-
+                YoloData response = yolo.DetectYOLO(frame);
                 response.set_seq(_request.seq());
                 response.set_eof(_request.eof());
-
-                cout << "SEQ : " << response.seq();
-                cout << "   EOF : " << response.eof() << endl;
-
+                
                 _responder.Finish(response, Status::OK, this);
                 _status = FINISH;
             }
@@ -123,14 +119,14 @@ private:
         ServerCompletionQueue* _cq;
         ProtoMat _request;
 
-        ServerAsyncResponseWriter<DetectedBoxList> _responder;
+        ServerAsyncResponseWriter<YoloData> _responder;
         ServerContext _ctx;
 
         enum CallStatus { CREATE, PROCESS, FINISH };
         CallStatus _status;
 
         int _seq = 0;
-        int _eof = false;
+        int _eof;
     };
 
     unique_ptr<ServerCompletionQueue> _cq;
