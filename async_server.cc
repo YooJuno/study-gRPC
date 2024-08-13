@@ -123,7 +123,7 @@ private:
         enum CallStatus { CREATE, PROCESS, FINISH };
         CallStatus _status;
 
-        int _seq = 0;
+        int _seq;
         int _eof;
     };
 

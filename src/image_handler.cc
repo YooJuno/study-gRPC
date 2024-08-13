@@ -5,15 +5,16 @@
 
 using remote::ProtoMat;
 using namespace std;
+using namespace cv;
 
 #define COLOR 3
 #define GRAY 1
 
-auto ImageHandler::ConvertProtoMatToMat(const ProtoMat& protoMat) -> cv::Mat
+auto ImageHandler::ConvertProtoMatToMat(const ProtoMat& protoMat) -> Mat
 {
-    cv::Mat image = cv::Mat(cv::Size(protoMat.width(), protoMat.height()), protoMat.type());
+    Mat image = Mat(Size(protoMat.width(), protoMat.height()), protoMat.type());
     string serializedMatrix(protoMat.buffer());
-    int idx = 0;
+    auto idx = 0;
 
     for (auto row=0 ; row<image.rows ; row++)
     {
@@ -37,7 +38,7 @@ auto ImageHandler::ConvertProtoMatToMat(const ProtoMat& protoMat) -> cv::Mat
     return image;
 }
 
-auto ImageHandler::ConvertMatToProtoMat(cv::Mat image) -> ProtoMat
+auto ImageHandler::ConvertMatToProtoMat(Mat image) -> ProtoMat
 {
     ProtoMat output;
     string buffer("");

@@ -9,7 +9,7 @@ public:
     void SaveVideoTo(const std::string&);
     void MergeYoloDataToVideo();
     void PushBack(const cv::Mat&);
-    void PushBack(remote::YoloData);
+    void PushBack(const remote::YoloData&);
     int GetTotalCount(void);
 
 private:

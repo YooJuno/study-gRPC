@@ -53,7 +53,7 @@ void VideoHandler::MergeYoloDataToVideo()
 {
     for(auto& yolo : _yoloDataList)
     {
-        for (int i = 0; i < yolo.objects_size(); i++)
+        for (auto i=0; i < yolo.objects_size(); i++)
         {
             const auto color = _colors[yolo.objects(i).classid() % _colors.size()];
             Rect objectBox(yolo.objects(i).tl_x(), yolo.objects(i).tl_y(), yolo.objects(i).width(), yolo.objects(i).height());
@@ -70,7 +70,7 @@ void VideoHandler::PushBack(const Mat& image)
     _images.push_back(image.clone());
 }
 
-void VideoHandler::PushBack(YoloData yolo)
+void VideoHandler::PushBack(const YoloData& yolo)
 {
     _yoloDataList.push_back(yolo);
 }

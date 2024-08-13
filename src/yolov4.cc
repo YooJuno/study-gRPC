@@ -8,7 +8,9 @@
 using remote::ProtoMat;
 using remote::YoloData;
 using remote::Object;
+
 using namespace std;
+using namespace cv;
 
 YOLOv4::YOLOv4() 
 {
@@ -18,19 +20,19 @@ YOLOv4::YOLOv4()
     const string yoloPath(yoloFolderPath + "yolo" + yoloVersion);
     auto net = LoadNet(yoloPath + ".cfg", yoloPath + ".weights", false); // if use cuda : true
     
-    _model = std::make_unique<cv::dnn::DetectionModel>(net);
-    _model->setInputParams(1./255, cv::Size(416, 416), cv::Scalar(), true);   
+    _model = make_unique<dnn::DetectionModel>(net);
+    _model->setInputParams(1./255, Size(416, 416), Scalar(), true);   
     
     _classList = LoadClassList(yoloFolderPath + "classes.txt");
     
-    _colors = {cv::Scalar(255, 255, 0), cv::Scalar(0, 255, 0), cv::Scalar(0, 255, 255), cv::Scalar(255, 0, 0)};
+    _colors = {Scalar(255, 255, 0), Scalar(0, 255, 0), Scalar(0, 255, 255), Scalar(255, 0, 0)};
 }
 
-auto YOLOv4::LoadClassList(const string& path) -> vector<std::string>
+auto YOLOv4::LoadClassList(const string& path) -> vector<string>
 {
-    std::vector<std::string> result;
-    std::string line;
-    std::ifstream ifs(path);
+    vector<string> result;
+    string line;
+    ifstream ifs(path);
     
     while (getline(ifs, line))
         result.push_back(line);
@@ -40,32 +42,32 @@ auto YOLOv4::LoadClassList(const string& path) -> vector<std::string>
     return result;
 }
 
-auto YOLOv4::LoadNet(const string& cfgPath, const string& weightsPath, bool is_cuda) -> cv::dnn::Net
+auto YOLOv4::LoadNet(const string& cfgPath, const string& weightsPath, bool is_cuda) -> dnn::Net
 {
-    auto result = cv::dnn::readNetFromDarknet(cfgPath, weightsPath);
+    auto result = dnn::readNetFromDarknet(cfgPath, weightsPath);
 
     if (is_cuda) 
     {
-        std::cout << "Attempty to use CUDA\n";
-        result.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
-        result.setPreferableTarget(cv::dnn::DNN_TARGET_CUDA_FP16);
+        cout << "Attempty to use CUDA\n";
+        result.setPreferableBackend(dnn::DNN_BACKEND_CUDA);
+        result.setPreferableTarget(dnn::DNN_TARGET_CUDA_FP16);
     } 
     else 
     {
-        std::cout << "Running on CPU\n";
-        result.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
-        result.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+        cout << "Running on CPU\n";
+        result.setPreferableBackend(dnn::DNN_BACKEND_OPENCV);
+        result.setPreferableTarget(dnn::DNN_TARGET_CPU);
     }
 
     return result;
 }
 
-auto YOLOv4::DetectYOLO(cv::Mat frame) -> YoloData
+auto YOLOv4::DetectYOLO(Mat frame) -> YoloData
 {   
     YoloData objects;
-    std::vector<int> classIds;
-    std::vector<float> confidences;
-    std::vector<cv::Rect> rects;
+    vector<int> classIds;
+    vector<float> confidences;
+    vector<Rect> rects;
 
     _model->detect(frame, classIds, confidences, rects, .2, .4);
 
