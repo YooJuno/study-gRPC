@@ -1,27 +1,22 @@
 # gRPC Study during GMD SOFT Internship Period
 
+## Version
+- v1.0 => https://github.com/YooJuno/study-gRPC/tree/v1.0_File-Download-Sync
+- v1.1 => https://github.com/YooJuno/study-gRPC/tree/v1.1_File-Download-Sync-Stream
+- v2.0 => https://github.com/YooJuno/study-gRPC/tree/v2.0_Mat-Sync
+- v2.1 => https://github.com/YooJuno/study-gRPC/tree/v2.1_Mat-Callback
+- v2.2 => https://github.com/YooJuno/study-gRPC/tree/v2.2_Mat-Async
+- v3.0 => https://github.com/YooJuno/study-gRPC/tree/v3.0_gRPC-Final
+
 ## OS
 - Linux , MacOS
 
 ## Libraries
 - OpenCV4
 - YOLOv4
+- Protocol buffer
 
-## Version
-- v1.0
-  - https://github.com/YooJuno/study-gRPC/tree/v1.0_File-Download-Sync
-- v1.1
-  - https://github.com/YooJuno/study-gRPC/tree/v1.1_File-Download-Sync-Stream
-- v2.0
-  - https://github.com/YooJuno/study-gRPC/tree/v2.0_Mat-Sync
-- v2.1
-  - https://github.com/YooJuno/study-gRPC/tree/v2.1_Mat-Callback
-- v2.2
-  - https://github.com/YooJuno/study-gRPC/tree/v2.2_Mat-Async
-- v3.0
-  - https://github.com/YooJuno/study-gRPC/tree/v3.0_gRPC-Final
-
-## Installation gRPC
+# Installation gRPC
 
 ### Setup
 
