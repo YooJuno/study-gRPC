@@ -12,7 +12,7 @@ public:
     YOLOv4();
     auto LoadClassList(const std::string& path) -> std::vector<std::string>;
     auto LoadNet(const std::string& cfgPath, const std::string& weightsPath, bool is_cuda) -> cv::dnn::Net;
-    auto DetectObjectBoxes(cv::Mat frame) -> remote::DetectedBoxList;
+    auto DetectYOLO(cv::Mat frame) -> remote::YoloData;
     
 private:
     std::unique_ptr<cv::dnn::DetectionModel> _model;
