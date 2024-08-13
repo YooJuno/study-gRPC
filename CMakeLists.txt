@@ -51,8 +51,10 @@ foreach(_target
     "${_target}.cc" 
     "${CMAKE_SOURCE_DIR}/src/media_handler.cc" 
     "${CMAKE_SOURCE_DIR}/src/yolov4.cc" 
+    "${CMAKE_SOURCE_DIR}/src/video_maker.cc" 
     "${CMAKE_SOURCE_DIR}/include/media_handler.h"
-    "${CMAKE_SOURCE_DIR}/include/yolov4.h") 
+    "${CMAKE_SOURCE_DIR}/include/yolov4.h"
+    "${CMAKE_SOURCE_DIR}/include/video_maker.h") 
   target_link_libraries(
     ${_target}
     remote_message_grpc_proto
