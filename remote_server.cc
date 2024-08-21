@@ -18,7 +18,6 @@
 #include <dirent.h>
 
 #include <filesystem>
-#include <zip.h>
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -43,45 +42,6 @@ ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 class DirTools
 {
 public:
-    static void AddFolderToZip(zip_t* zip, const string& folderPath, const string& zipPath) 
-    {
-        for (const auto& entry : filesystem::recursive_directory_iterator(folderPath)) 
-        {
-            if (entry.is_directory()) 
-                continue;
-
-            string filePath = entry.path().string();
-            string fileNameInZip = zipPath + entry.path().string().substr(folderPath.length() + 1);
-
-            zip_source_t* source = zip_source_file(zip, filePath.c_str(), 0, 0);
-            if (source == nullptr) 
-            {
-                cerr << "Failed to add file to zip: " << filePath << endl;
-                continue;
-            }
-
-            zip_file_add(zip, fileNameInZip.c_str(), source, ZIP_FL_OVERWRITE);
-        }
-    }
-
-    static bool ZipFolder(const string& folderPath, const string& zipFilePath)
-    {
-        int errorp;
-        zip_t* zip = zip_open(zipFilePath.c_str(), ZIP_CREATE | ZIP_TRUNCATE, &errorp);
-        if (zip == nullptr) 
-        {
-            zip_error_t error;
-            zip_error_init_with_code(&error, errorp);
-            zip_error_fini(&error);
-            return false;
-        }
-        
-        AddFolderToZip(zip, folderPath, "");
-        zip_close(zip);
-
-        return true;
-    }
-
     static auto GetFileNamesFrom(DIR* dir) -> vector<string>
     {
         vector<string> result;
@@ -190,20 +150,6 @@ public:
     {
         ifstream ifs;
         string targetName(request->name());
-
-        bool isTargetDir = DirTools::IsDir(_datasetPath + targetName);
-        if (isTargetDir)
-        {
-            bool zipsuccess = DirTools::ZipFolder(_datasetPath + targetName, _datasetPath + targetName + ".zip");
-
-            if (!zipsuccess)
-            {
-                reply->set_success(false);
-
-                return Status::OK;
-            }
-            targetName += ".zip";
-        }
         
         ifs.open(_datasetPath + targetName, ios::binary);
 
@@ -221,9 +167,6 @@ public:
         reply->set_name(targetName);
         reply->set_size(_buffer.length());
         reply->set_date(DirTools::GetCreationTimeOfFile(_datasetPath + targetName)); 
-        
-        if (isTargetDir)
-            filesystem::remove(_datasetPath + targetName);
 
         return Status::OK;
     }
