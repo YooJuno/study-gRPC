@@ -242,7 +242,7 @@ void RunClient(string targetStr)
     string userPw;
     bool permission = false;
 
-    for (int cnt=0; cnt<3 & !permission; cnt++)
+    for (int cnt=0; cnt<3 && !permission; cnt++)
     {
         tie(userId, userPw) = IO::GetLoginInfoByUser();
         permission = service.TryLoginToServer(userId, userPw);
