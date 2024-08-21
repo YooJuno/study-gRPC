@@ -70,8 +70,12 @@ private:
         
         while (true)
         {    
-            CHECK(_cq->Next(&tag, &ok));
-            CHECK(ok); 
+            // CHECK(_cq->Next(&tag, &ok));
+            // CHECK(ok); 
+            if(!_cq->Next(&tag, &ok))
+                exit(1);
+            if(!ok)
+                exit(1);
 
             static_cast<CallData*>(tag)->Proceed();
         }
@@ -107,7 +111,10 @@ private:
             }
             else
             {
-                CHECK_EQ(_status, FINISH);
+                // CHECK_EQ(_status, FINISH);
+                if (_status != FINISH)
+                    exit(1);
+                
                 delete this;
             }
         }
