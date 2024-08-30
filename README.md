@@ -13,7 +13,7 @@ make -j 8
 ```
 
 # **How it works**
-1. Client sends extracted images continueously from video.
+1. Client sends images continueously extracted from video.
 2. Server receives image and process YOLO with.
 3. Server doesn't return processed image, but metadata of detected objects information such as x,y width, height...
 4. With metadata of YOLO from server, client merge it to original image and create new video which contains YOLO bounding boxes in every images.
