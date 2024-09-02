@@ -11,8 +11,9 @@
     LINK : **https://github.com/YooJuno/study-gRPC/tree/v1.0_File-Download-Sync**
 
 - ***Version 1.1***
+    - **gRPC를 활용한 Stream 방식의 파일 다운로드 프로그램**
     - **CLIENT**
-        1.  
+        1. 
     - **SERVER**
         1.  
     
