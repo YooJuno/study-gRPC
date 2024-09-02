@@ -9,23 +9,23 @@
 ```bash
 ./remote_server
 ```
-![alt text](images/image.png)    
+
+![alt text](images/image.png)
 
 ### CLIENT
 
 - ./remote_client   <VIDEO_PATH>   <CIRCLE:0 , YOLO:1>
+
 ```bash
 mkdir ../result
 ./remote_client ../dataset/video.mp4 1
 ```
-![alt text](images/image-1.png)
 
+![alt text](images/image-1.png)
 
 - You can see the processed picture by server
 
     ![alt text](images/image-2.png)
-
-    
 
 ### Reference
 
