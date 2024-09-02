@@ -1,4 +1,4 @@
-# gRPC를 활용한 콜백 함수 기반의 원격 YOLO 객체 인식 프로그램**
+# gRPC를 활용한 콜백 함수 기반의 원격 YOLO 객체 인식 프로그램
 
 - **callback_client.cc**
     1. Conditional Variable, Mutex를 요청을 보내고 응답을 기다린다. Mutex를 사용하여 비동기적인 동작으로 보일 수 있지만 실제 동작 방식은 동기적으로 이루어진다.
