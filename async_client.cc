@@ -35,7 +35,6 @@ ABSL_FLAG(string, input_video_path, "../dataset/input_long.mp4", "Input video pa
 ABSL_FLAG(string, output_video_path, "../dataset/output.avi", "Output video path"); // codec 문제로 확장자를 .avi로 하였음
 ABSL_FLAG(uint32_t, job, 1, "Job(0:Circle , 1:YOLO)");
 
-
 class ClientNode : public ImageHandler
 {
 public:
