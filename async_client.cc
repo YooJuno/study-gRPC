@@ -7,8 +7,8 @@
 
 #include "remote_message.grpc.pb.h"
 #include "media_handler.h"
-#include <condition_variable>  // cv 
-#include <mutex>               // mu 
+#include <condition_variable>
+#include <mutex>
 
 #include <iostream>
 #include <string>
