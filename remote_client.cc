@@ -62,8 +62,8 @@ void RunClient(string targetStr, string videoPath, int job)
     ProtoMat protoMat;
 
     grpc::ChannelArguments args;
-    args.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
-    args.SetMaxSendMessageSize(1024 * 1024 * 1024 /* == 1GiB */);
+    args.SetMaxReceiveMessageSize(1024 * 1024 * 1024 /* == 1GB */);
+    args.SetMaxSendMessageSize(1024 * 1024 * 1024 /* == 1GB */);
 
     ClientNode service(grpc::CreateCustomChannel(targetStr, grpc::InsecureChannelCredentials(), args));
 
