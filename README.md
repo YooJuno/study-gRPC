@@ -1,43 +1,41 @@
 # gRPC Study during GMD-SOFT internship period
 
 ## Versions
+
 - ***Version 1.0***
+    [**=> LINK**](https://github.com/YooJuno/study-gRPC/tree/v1.0_File-Download-Sync)
     - **gRPC를 활용한 파일 다운로드 프로그램**
     - **CLIENT**
-        1. 
+        1. sd
     - **SERVER**
-        1. 
-
-    LINK : **https://github.com/YooJuno/study-gRPC/tree/v1.0_File-Download-Sync**
+        1. sd
 
 - ***Version 1.1***
+    [**=> LINK**](https://github.com/YooJuno/study-gRPC/tree/v1.1_File-Download-Sync-Stream)
     - **gRPC를 활용한 Stream 방식의 파일 다운로드 프로그램**
     - **CLIENT**
-        1. 
+        1. df
     - **SERVER**
         1.  
-    
-    LINK : **https://github.com/YooJuno/study-gRPC/tree/v1.1_File-Download-Sync-Stream**
 
 - ***Version 2.0***
+    [**LINK**](https://github.com/YooJuno/study-gRPC/tree/v2.0_Mat-Sync)
     - **gRPC를 활용한 동기식 원격 YOLO 객체 인식 프로그램**
     - **CLIENT**
         1.  
     - **SERVER**
         1.  
-    
-    LINK : **https://github.com/YooJuno/study-gRPC/tree/v2.0_Mat-Sync**
 
 - ***Version 2.1***
+    [**=> LINK**](https://github.com/YooJuno/study-gRPC/tree/v2.1_Mat-Callback)
     - **gRPC를 활용한 콜백 함수 기반의 원격 YOLO 객체 인식 프로그램**
     - **CLIENT**
         1.  
     - **SERVER**
         1.  
-    
-    LINK : **https://github.com/YooJuno/study-gRPC/tree/v2.1_Mat-Callback**
 
 - ***Version2.2***
+    [**=> LINK**](https://github.com/YooJuno/study-gRPC/tree/v2.2_Mat-Async)
     - **gRPC를 활용한 비동기식 원격 YOLO 객체 인식 프로그램 - study**
     - **CLIENT**
         1. 동영상을 불러와 이미지를 추출함과 동시에 서버로 한 장 씩 비동기적으로 송신한다.
@@ -47,10 +45,9 @@
         2. 검출된 객체의 Bounding Box를 영상에 추가하여 회신한다.
         3. 이미지의 수신, 처리, 회신의 과정은 비동기적으로 진행되어 이미지가 들어오는 즉시 처리가 시작되고 완료되면 마자 회신한다.
         4. 비동기 구현은 **Completeion Queue**를 사용하여 CREATE -> PROCESS -> FINISH 순으로 요청을 처리한다.
-    
-    LINK : **https://github.com/YooJuno/study-gRPC/tree/v2.2_Mat-Async**
 
 - ***Version3.0***
+    [**=> LINK**](https://github.com/YooJuno/study-gRPC/tree/v3.0_gRPC-Final)
     - **gRPC를 활용한 비동기식 원격 YOLO 객체 인식 프로그램 - FINAL**
     - **CLIENT**
         1. 동영상을 불러와 이미지를 추출함과 동시에 서버로 한 장 씩 비동기적으로 송신한다.
@@ -61,14 +58,13 @@
         2. 검출된 객체의 정보인 **YoloData**를 회신한다.
         3. 이미지의 수신, 처리, 회신의 과정은 비동기적으로 진행되어 이미지가 들어오는 즉시 처리가 시작되고 완료되면 회신한다.
         4. 비동기 구현은 **Completeion Queue**를 사용하여 CREATE -> PROCESS -> FINISH 순으로 요청을 처리한다.
-    
-    LINK : **https://github.com/YooJuno/study-gRPC/tree/v3.0_gRPC-Final**
-
 
 ## OS
+
 - Linux , MacOS
 
 ## Libraries
+
 - OpenCV4.4 ~
 - Protocol buffer
 
@@ -87,24 +83,22 @@ export PATH="$MY_INSTALL_DIR/bin:$PATH"
 You need version 3.13 or later of `cmake`. Install it by following these instructions:
 
 - Linux
-    
+
     ```bash
     sudo apt install -y cmake
     ```
-    
+
 - macOS:
-    
+
     ```bash
     brew install cmake
     ```
-    
 
 Check the version of `cmake`:
 
 ```bash
 $ cmake --version
 ```
-
 
 Under Linux, the version of the system-wide `cmake` can often be too old. You can install a more recent version into your local installation directory as follows:
 
@@ -119,17 +113,16 @@ rm cmake-linux.sh
 Install the basic tools required to build gRPC:
 
 - **Linux**
-    
+
     ```bash
     sudo apt install -y build-essential autoconf libtool pkg-config
     ```
-    
+
 - **macOS:**
-    
+
     ```bash
     brew install autoconf automake libtool pkg-config
     ```
-    
 
 ### **Clone the `grpc` repo**
 
@@ -158,8 +151,7 @@ make -j 8
 make install
 popd
 ```
-    
 
 ### Reference
 
-https://grpc.io/docs/languages/cpp/quickstart/
+- https://grpc.io/docs/languages/cpp/quickstart/
