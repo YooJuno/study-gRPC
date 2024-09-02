@@ -2,7 +2,7 @@
 
 ## Versions
 - ***Version 1.0***
-    - gRPC를 활용한 파일 다운로드 프로그램
+    - **gRPC를 활용한 파일 다운로드 프로그램**
     - **CLIENT**
         1. 
     - **SERVER**
@@ -19,7 +19,7 @@
     LINK : **https://github.com/YooJuno/study-gRPC/tree/v1.1_File-Download-Sync-Stream**
 
 - ***Version 2.0***
-    - **gRPC**를 활용한 동기식 원격 YOLO 객체 인식 프로그램
+    - **gRPC를 활용한 동기식 원격 YOLO 객체 인식 프로그램**
     - **CLIENT**
         1.  
     - **SERVER**
@@ -28,7 +28,7 @@
     LINK : **https://github.com/YooJuno/study-gRPC/tree/v2.0_Mat-Sync**
 
 - ***Version 2.1***
-    - **gRPC**를 활용한 콜백 함수 기반의 원격 YOLO 객체 인식 프로그램
+    - **gRPC를 활용한 콜백 함수 기반의 원격 YOLO 객체 인식 프로그램**
     - **CLIENT**
         1.  
     - **SERVER**
@@ -37,7 +37,7 @@
     LINK : **https://github.com/YooJuno/study-gRPC/tree/v2.1_Mat-Callback**
 
 - ***Version2.2***
-    - **gRPC**를 활용한 비동기식 원격 YOLO 객체 인식 프로그램 - study
+    - **gRPC를 활용한 비동기식 원격 YOLO 객체 인식 프로그램 - study**
     - **CLIENT**
         1. 동영상을 불러와 이미지를 추출함과 동시에 서버로 한 장 씩 비동기적으로 송신한다.
         2. Bounding Box가 포함된 이미지를 서버로부터 비동기적으로 수신한다.
@@ -50,11 +50,11 @@
     LINK : **https://github.com/YooJuno/study-gRPC/tree/v2.2_Mat-Async**
 
 - ***Version3.0***
-    - **gRPC**를 활용한 비동기식 원격 YOLO 객체 인식 프로그램 - FINAL
+    - **gRPC를 활용한 비동기식 원격 YOLO 객체 인식 프로그램 - FINAL**
     - **CLIENT**
         1. 동영상을 불러와 이미지를 추출함과 동시에 서버로 한 장 씩 비동기적으로 송신한다.
         2. 또한, 비동기적으로 서버로부터 객체의 정보(**YoloData**)를 수신하여 객체 리스트에 저장한다.
-        3. 모든 영상처리에 대한 수신이 끝나면 원본 동영상에 YOLO 검출 데이터를 합쳐 재생 및 저장을 진행한다.
+        3. 모든 영상처리에 대한 수신이 끝나면 원본 동영상에 **YoloData**를 합쳐 재생 및 저장을 진행한다.
     - **SERVER**
         1. 클라이언트로부터 수신한 이미지에서 YOLO를 사용하여 객체를 검출해낸다.
         2. 검출된 객체의 정보인 **YoloData**를 회신한다.
