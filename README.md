@@ -1,12 +1,36 @@
 # gRPC Study during GMD SOFT Internship Period
 
-## Version
-- v1.0 => https://github.com/YooJuno/study-gRPC/tree/v1.0_File-Download-Sync
-- v1.1 => https://github.com/YooJuno/study-gRPC/tree/v1.1_File-Download-Sync-Stream
-- v2.0 => https://github.com/YooJuno/study-gRPC/tree/v2.0_Mat-Sync
-- v2.1 => https://github.com/YooJuno/study-gRPC/tree/v2.1_Mat-Callback
-- v2.2 => https://github.com/YooJuno/study-gRPC/tree/v2.2_Mat-Async
-- v3.0 => https://github.com/YooJuno/study-gRPC/tree/v3.0_gRPC-Final
+## Versions
+- Version 1.0
+    
+    파일 다운로드 프로그램 (Server -> Client)
+    
+    
+
+
+    https://github.com/YooJuno/study-gRPC/tree/v1.0_File-Download-Sync
+
+- v1.1 : 
+    
+    https://github.com/YooJuno/study-gRPC/tree/v1.1_File-Download-Sync-Stream
+
+- Version 2.0 : df
+    
+    https://github.com/YooJuno/study-gRPC/tree/v2.0_Mat-Sync
+
+- Version 2.1 => 
+
+    https://github.com/YooJuno/study-gRPC/tree/v2.1_Mat-Callback
+
+
+- v2.2: 
+
+    https://github.com/YooJuno/study-gRPC/tree/v2.2_Mat-Async
+
+- v3.0
+
+    https://github.com/YooJuno/study-gRPC/tree/v3.0_gRPC-Final
+
 
 ## OS
 - Linux , MacOS
