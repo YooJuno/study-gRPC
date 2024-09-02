@@ -39,7 +39,7 @@ public:
         : stub_(RemoteCommunication::NewStub(channel))
         {}
 
-    void AsyncProcessImage(const string& path) // 이름 바꿔야됨
+    void AsyncProcessImage(const string& path)
     {        
         cv::VideoCapture cap(path);
         cv::Mat frame;
